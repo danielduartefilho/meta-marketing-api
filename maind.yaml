@@ -6,7 +6,8 @@ info:
     Rate limits and best practices are enforced.
 
     # Authentication Flow
-    1. User Bearer Token (stored in connector):
+    1. User Bearer Token:
+       - Stored in connector configuration
        - Required permissions:
          * pages_manage_ads (for ad management)
          * pages_read_engagement (for metrics)
@@ -17,17 +18,26 @@ info:
          * On error 200 (permission error)
          * On error 10 (app configuration)
 
-    2. Page Token Generation:
-       - Uses stored bearer token
-       - Calls /me/accounts internally
-       - Caches page token for 1 hour
-       - Auto-refresh on expiration
+    2. Resource Discovery:
+       a. Page Token:
+          - Call /me/accounts to list available pages
+          - Select page with ID 102264027940184
+          - Extract and cache page access token
+          - Cache duration: 1 hour
+          - Auto-refresh on expiration
+
+       b. Ad Account:
+          - Call /me/adaccounts to list accounts
+          - Select account with ID 906594379912215
+          - Format: Remove 'act_' prefix for API calls
+          - Cache account details and status
 
     3. Error Handling:
        - Automatic retry on token errors
        - Permission verification
        - Rate limit backoff
        - Detailed error messages
+
   version: '22.0'
   x-connector-config:
     page-id: "102264027940184"
@@ -48,6 +58,13 @@ info:
           action: verify_permissions
         - code: 10
           action: verify_app_config
+    cache-config:
+      page-token:
+        duration: 3600
+        refresh-before: 300
+      account-info:
+        duration: 86400
+        refresh-before: 3600
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -73,115 +90,13 @@ security:
   - bearerAuth: []
 
 paths:
-  /oauth/access_token:
-    get:
-      operationId: refreshAccessToken
-      summary: Refresh access token
-      description: |
-        Refresh expired access token using stored refresh token.
-        Called automatically on error 190.
-      tags:
-        - Authentication
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: grant_type
-          in: query
-          required: true
-          description: Must be 'fb_exchange_token'
-          schema:
-            type: string
-            enum: [fb_exchange_token]
-        - name: client_id
-          in: query
-          required: true
-          description: App ID from Meta Developer Console
-          schema:
-            type: string
-        - name: client_secret
-          in: query
-          required: true
-          description: App Secret from Meta Developer Console
-          schema:
-            type: string
-        - name: fb_exchange_token
-          in: query
-          required: true
-          description: Expired access token to refresh
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns new access token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  access_token:
-                    type: string
-                    description: New access token
-                  token_type:
-                    type: string
-                    enum: [bearer]
-                  expires_in:
-                    type: integer
-                    description: Token lifetime in seconds
-              example:
-                access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
-                token_type: "bearer"
-                expires_in: 5184000
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-
-  /102264027940184:
-    get:
-      operationId: getPageAccessToken
-      summary: Get page access token
-      description: |
-        Get page access token for pre-configured page ID.
-        Called internally by connector using stored bearer token.
-        Requires pages_manage_ads permission.
-      tags:
-        - Authentication
-      parameters:
-        - name: access_token
-          in: query
-          required: true
-          description: User access token with pages_manage_ads permission
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns page access token
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageToken"
-              example:
-                access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
   /me/accounts:
     get:
       operationId: getPageAccounts
       summary: Get page accounts
       description: |
-        Internal endpoint to generate page access token.
+        List available pages and get access tokens.
+        Called internally to get token for page ID 102264027940184.
         Required permissions: pages_manage_ads
       tags:
         - Authentication
@@ -194,7 +109,7 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "id,name,access_token"
+            default: "id,name,access_token,tasks"
       responses:
         '200':
           description: Success. Returns page access tokens
@@ -204,7 +119,9 @@ paths:
             X-Rate-Limit-Reset:
               $ref: "#/components/headers/RateLimitReset"
             Cache-Control:
-              $ref: "#/components/headers/CacheControl"
+              schema:
+                type: string
+                default: "private, max-age=3600"
           content:
             application/json:
               schema:
@@ -214,6 +131,12 @@ paths:
                   - id: "102264027940184"
                     name: "Test Page"
                     access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+                    tasks: [
+                      "MANAGE_JOBS",
+                      "CREATE_CONTENT",
+                      "MODERATE_CONTENT",
+                      "MANAGE_MESSAGES"
+                    ]
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -226,7 +149,8 @@ paths:
       operationId: getAdAccounts
       summary: List ad accounts
       description: |
-        Discover available ad accounts.
+        List available ad accounts.
+        Called internally to get account ID 906594379912215.
         Required permissions: ads_management
       tags:
         - Authentication
@@ -239,7 +163,7 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "account_id,name,account_status"
+            default: "account_id,name,account_status,disable_reason,currency,timezone_name"
       responses:
         '200':
           description: Success. Returns list of ad accounts
@@ -249,7 +173,9 @@ paths:
             X-Rate-Limit-Reset:
               $ref: "#/components/headers/RateLimitReset"
             Cache-Control:
-              $ref: "#/components/headers/CacheControl"
+              schema:
+                type: string
+                default: "private, max-age=86400"
           content:
             application/json:
               schema:
@@ -259,6 +185,9 @@ paths:
                   - account_id: "906594379912215"
                     name: "Main Ad Account"
                     account_status: "ACTIVE"
+                    disable_reason: null
+                    currency: "USD"
+                    timezone_name: "America/Los_Angeles"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':

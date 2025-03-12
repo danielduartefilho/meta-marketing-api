@@ -4,7 +4,9 @@ CampaignList:
     data:
       type: array
       items:
-        $ref: "#/Campaign"
+        type: object
+        allOf:
+          - $ref: "#/Campaign"
 
 Campaign:
   type: object

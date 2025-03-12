@@ -5,22 +5,27 @@ info:
     Meta Marketing API for campaign management and insights.
     Rate limits and best practices are enforced.
 
-    # Authentication Flow
-    1. User Access Token (required for getPageAccessToken):
-       EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+    # Automatic Authentication Flow
+    The connector automatically handles the following steps:
+    1. Bearer Token: Automatically added to all requests
+    2. Page Access Token: Retrieved via /me/accounts
+    3. Ad Account ID: Retrieved via /me/adaccounts
+    4. Campaign Access: Uses discovered IDs automatically
 
-    2. Page Access Token (returned by getPageAccessToken):
-       EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
-
-    3. Ad Account ID (from getAdAccounts):
-       act_906594379912215
-
-    4. Campaign ID (from getCampaigns):
-       23847392874
-
-    These values are pre-configured in the connector for testing.
-    For production use, obtain your own tokens via Meta's authentication flow.
+    # Test Values (Pre-configured)
+    - User Access Token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+    - Page Access Token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+    - Ad Account ID: act_906594379912215
+    - Campaign ID: 23847392874
   version: '22.0'
+  x-authentication:
+    auto-discovery: true
+    token-refresh: true
+    cache-duration: 3600
+    required-permissions:
+      - manage_pages
+      - ads_management
+      - ads_read
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -341,8 +346,8 @@ paths:
       operationId: getAdAccounts
       summary: List ad accounts
       description: |
-        Get a list of all ad accounts associated with the user.
-        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+        Automatically discover available ad accounts.
+        Called internally by the connector.
       tags:
         - Authentication
       parameters:
@@ -405,13 +410,64 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /me/accounts:
+    get:
+      operationId: getPageAccounts
+      summary: Get page accounts
+      description: |
+        Automatically retrieve page access tokens for all managed pages.
+        Called internally by the connector.
+      tags:
+        - Authentication
+      parameters:
+        - name: access_token
+          in: query
+          required: true
+          description: User access token with manage_pages permission
+          schema:
+            type: string
+            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            example: "id,name,access_token"
+      responses:
+        '200':
+          description: Success. Returns page access tokens
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageAccountList"
+              example:
+                data:
+                  - id: "102264027940184"
+                    name: "Test Page"
+                    access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+                paging:
+                  cursors:
+                    before: "MAZDZD"
+                    after: "MQZDZD"
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Meta API Access Token
+      description: |
+        Meta API Access Token.
+        Automatically added to all requests by the connector.
+        Retrieved via /me/accounts for pages and /me/adaccounts for ads.
 
   headers:
     BusinessUseCaseUsage:
@@ -563,3 +619,39 @@ components:
           type: string
           description: Account currency
           example: "USD"
+    PageAccountList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PageAccount"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    PageAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Page ID
+          example: "102264027940184"
+        name:
+          type: string
+          description: Page name
+          example: "Test Page"
+        access_token:
+          type: string
+          description: Page access token
+          example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+    Paging:
+      type: object
+      properties:
+        cursors:
+          type: object
+          properties:
+            before:
+              type: string
+              example: "MAZDZD"
+            after:
+              type: string
+              example: "MQZDZD"

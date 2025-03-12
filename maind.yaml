@@ -12,7 +12,13 @@ info:
     - Campaign ID: 23847392874
 
     # Authentication Flow
-    1. User Bearer Token (stored in connector)
+    1. User Bearer Token (stored in connector):
+       - Required permissions:
+         * pages_manage_ads (for ad management)
+         * pages_read_engagement (for metrics)
+         * ads_management (for campaign access)
+         * ads_read (for insights)
+
     2. Page Token Generation:
        - Uses stored bearer token
        - Calls /me/accounts internally
@@ -23,7 +29,8 @@ info:
     ad-account-id: "906594379912215"
     token-cache-duration: 3600
     required-permissions:
-      - manage_pages
+      - pages_manage_ads
+      - pages_read_engagement
       - ads_management
       - ads_read
   x-rate-limiting:
@@ -57,14 +64,14 @@ paths:
       summary: Get page accounts
       description: |
         Internal endpoint to generate page access token.
-        Called automatically by the connector using stored bearer token.
+        Requires pages_manage_ads and pages_read_engagement permissions.
       tags:
         - Authentication
       parameters:
         - name: access_token
           in: query
           required: true
-          description: User access token with manage_pages permission
+          description: User access token with pages_manage_ads permission
           schema:
             type: string
         - name: fields
@@ -94,6 +101,7 @@ paths:
       description: |
         Get a list of all campaigns for the specified ad account.
         Uses pre-configured account_id (906594379912215).
+        Requires pages_manage_ads and ads_management permissions.
       tags:
         - Campaigns
       parameters:
@@ -152,6 +160,7 @@ paths:
       description: |
         Get detailed information about a specific campaign.
         Uses pre-configured account_id (906594379912215).
+        Requires pages_manage_ads and ads_management permissions.
       tags:
         - Campaigns
       parameters:
@@ -203,6 +212,7 @@ paths:
       description: |
         Get performance metrics for a specific campaign.
         Uses pre-configured account_id (906594379912215).
+        Requires pages_read_engagement and ads_read permissions.
       tags:
         - Insights
       parameters:
@@ -292,7 +302,11 @@ components:
       bearerFormat: JWT
       description: |
         User access token stored in connector.
-        Used internally to generate page access token.
+        Required permissions:
+        - pages_manage_ads (for ad management)
+        - pages_read_engagement (for metrics)
+        - ads_management (for campaign access)
+        - ads_read (for insights)
 
   headers:
     BusinessUseCaseUsage:

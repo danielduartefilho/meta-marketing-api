@@ -1,0 +1,197 @@
+headers:
+  BusinessUseCaseUsage:
+    description: Business use case usage information
+    schema:
+      type: string
+      example: "business_use_case=CAMPAIGNS_MANAGEMENT;points_used=10;points_remaining=8990"
+  RateLimitReset:
+    description: Time until rate limit reset in seconds
+    schema:
+      type: integer
+      example: 300
+  CacheControl:
+    description: Cache control directives
+    schema:
+      type: string
+      example: "public, max-age=300"
+
+responses:
+  BadRequest:
+    description: Invalid request parameters
+    content:
+      application/json:
+        schema:
+          $ref: "#/schemas/Error"
+        example:
+          error:
+            code: 400
+            message: "Invalid parameter value"
+            type: "OAuthException"
+  Unauthorized:
+    description: Invalid or missing access token
+    content:
+      application/json:
+        schema:
+          $ref: "#/schemas/Error"
+        example:
+          error:
+            code: 401
+            message: "Invalid OAuth access token"
+            type: "OAuthException"
+  RateLimitExceeded:
+    description: Rate limit exceeded
+    content:
+      application/json:
+        schema:
+          $ref: "#/schemas/Error"
+        example:
+          error:
+            code: 429
+            message: "Application request limit reached"
+            type: "OAuthException"
+
+schemas:
+  Error:
+    type: object
+    properties:
+      error:
+        type: object
+        required:
+          - code
+          - message
+          - type
+        properties:
+          code:
+            type: integer
+            description: Error code
+            example: 400
+          message:
+            type: string
+            description: Error message
+            example: "Invalid parameter value"
+          type:
+            type: string
+            description: Error type
+            example: "OAuthException"
+  PageToken:
+    type: object
+    required:
+      - access_token
+    properties:
+      access_token:
+        type: string
+        description: Page access token
+        example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+  Campaign:
+    type: object
+    required:
+      - id
+      - name
+      - status
+      - objective
+    properties:
+      id:
+        type: string
+        description: Campaign ID
+        example: "23847392874"
+      name:
+        type: string
+        description: Campaign name
+        example: "Website Traffic Campaign"
+      status:
+        type: string
+        description: Campaign status
+        enum: [ACTIVE, PAUSED, DELETED]
+        example: "ACTIVE"
+      objective:
+        type: string
+        description: Campaign objective
+        enum: [LINK_CLICKS, POST_ENGAGEMENT, VIDEO_VIEWS]
+        example: "LINK_CLICKS"
+  CampaignList:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        type: array
+        description: List of campaigns
+        items:
+          $ref: "#/schemas/Campaign"
+      paging:
+        type: object
+        description: Pagination information
+        properties:
+          cursors:
+            type: object
+            properties:
+              before:
+                type: string
+                description: Cursor for previous page
+                example: "MAZDZD"
+              after:
+                type: string
+                description: Cursor for next page
+                example: "MQZDZD"
+  InsightsResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        type: array
+        description: List of insights data points
+        items:
+          type: object
+          required:
+            - date_start
+            - date_end
+          properties:
+            date_start:
+              type: string
+              format: date
+              description: Start date for this data point
+              example: "2025-03-01"
+            date_end:
+              type: string
+              format: date
+              description: End date for this data point
+              example: "2025-03-01"
+            impressions:
+              type: integer
+              description: Number of impressions
+              example: 1234
+            reach:
+              type: integer
+              description: Number of unique users who saw the ad
+              example: 987
+            spend:
+              type: number
+              format: float
+              description: Amount spent in account currency
+              example: 50.25
+            inline_post_engagement:
+              type: integer
+              description: Number of post engagements
+              example: 45
+            video_p25_watched_actions:
+              type: integer
+              description: Number of times video was watched to 25%
+              example: 800
+            video_p50_watched_actions:
+              type: integer
+              description: Number of times video was watched to 50%
+              example: 600
+            video_p75_watched_actions:
+              type: integer
+              description: Number of times video was watched to 75%
+              example: 400
+            video_p95_watched_actions:
+              type: integer
+              description: Number of times video was watched to 95%
+              example: 200
+            video_avg_time_watched_actions:
+              type: number
+              format: float
+              description: Average watch time in seconds
+              example: 15.5

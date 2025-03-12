@@ -12,10 +12,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/schemas/PageToken"
+                $ref: "../components/schemas.yaml#/schemas/PageToken"
         '400':
-          $ref: "#/responses/BadRequest"
+          $ref: "../components/responses.yaml#/responses/BadRequest"
         '401':
-          $ref: "#/responses/Unauthorized"
+          $ref: "../components/responses.yaml#/responses/Unauthorized"
         '429':
-          $ref: "#/responses/RateLimitExceeded"
+          $ref: "../components/responses.yaml#/responses/RateLimitExceeded"

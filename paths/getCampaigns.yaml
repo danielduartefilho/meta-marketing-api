@@ -16,13 +16,20 @@ paths:
       responses:
         '200':
           description: Success
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "../components/headers.yaml#/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "../components/headers.yaml#/headers/CacheControl"
           content:
             application/json:
               schema:
-                $ref: "#/schemas/CampaignList"
+                $ref: "../components/schemas.yaml#/schemas/CampaignList"
         '400':
-          $ref: "#/responses/BadRequest"
+          $ref: "../components/responses.yaml#/responses/BadRequest"
         '401':
-          $ref: "#/responses/Unauthorized"
+          $ref: "../components/responses.yaml#/responses/Unauthorized"
         '429':
-          $ref: "#/responses/RateLimitExceeded"
+          $ref: "../components/responses.yaml#/responses/RateLimitExceeded"

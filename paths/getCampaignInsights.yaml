@@ -52,18 +52,18 @@ paths:
           description: Success
           headers:
             X-Business-Use-Case-Usage:
-              $ref: "#/headers/BusinessUseCaseUsage"
+              $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
             X-Rate-Limit-Reset:
-              $ref: "#/headers/RateLimitReset"
+              $ref: "../components/headers.yaml#/headers/RateLimitReset"
             Cache-Control:
-              $ref: "#/headers/CacheControl"
+              $ref: "../components/headers.yaml#/headers/CacheControl"
           content:
             application/json:
               schema:
-                $ref: "#/schemas/InsightsResponse"
+                $ref: "../components/schemas.yaml#/schemas/InsightsResponse"
         '400':
-          $ref: "#/responses/BadRequest"
+          $ref: "../components/responses.yaml#/responses/BadRequest"
         '401':
-          $ref: "#/responses/Unauthorized"
+          $ref: "../components/responses.yaml#/responses/Unauthorized"
         '429':
-          $ref: "#/responses/RateLimitExceeded"
+          $ref: "../components/responses.yaml#/responses/RateLimitExceeded"

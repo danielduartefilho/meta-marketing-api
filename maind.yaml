@@ -31,13 +31,17 @@ security:
 
 paths:
   /102264027940184:
-    $ref: "./paths/getPageAccessToken.yaml#/paths/getPageAccessToken"
-  /act_906594379912215/campaigns:
-    $ref: "./paths/getCampaigns.yaml#/paths/getCampaigns"
-  /{campaign_id}:
-    $ref: "./paths/getCampaignById.yaml#/paths/getCampaignById"
-  /act_906594379912215/insights:
-    $ref: "./paths/getCampaignInsights.yaml#/paths/getCampaignInsights"
+    get:
+      $ref: "./paths/getPageAccessToken.yaml"
+  /act_{account_id}/campaigns:
+    get:
+      $ref: "./paths/getCampaigns.yaml"
+  /act_{account_id}/campaigns/{campaign_id}:
+    get:
+      $ref: "./paths/getCampaignById.yaml"
+  /act_{account_id}/campaigns/{campaign_id}/insights:
+    get:
+      $ref: "./paths/getCampaignInsights.yaml"
 
 components:
   securitySchemes:

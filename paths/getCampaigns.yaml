@@ -1,26 +1,28 @@
-get:
-  operationId: getCampaigns
-  summary: Get all campaigns for an ad account
-  description: |
-    Returns all active campaigns for the specified ad account (ID: act_906594379912215).
-    If the system user token fails, the connector should fetch a page token first and retry.
-  responses:
-    '200':
-      description: Successfully retrieved campaigns list
-      headers:
-        X-Business-Use-Case-Usage:
-          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/BusinessUseCaseUsage"
-        X-Rate-Limit-Reset:
-          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/RateLimitReset"
-        Cache-Control:
-          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/CacheControl"
-      content:
-        application/json:
+paths:
+  /getCampaigns:
+    get:
+      summary: List campaigns
+      description: Get a list of all campaigns for the specified ad account
+      operationId: getCampaigns
+      tags:
+        - Campaigns
+      parameters:
+        - name: fields
+          in: query
+          required: true
           schema:
-            $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/CampaignList"
-    '400':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/BadRequest"
-    '401':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/Unauthorized"
-    '429':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/RateLimitExceeded"
+            type: string
+            example: "id,name,status,objective"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/CampaignList"
+        '400':
+          $ref: "#/responses/BadRequest"
+        '401':
+          $ref: "#/responses/Unauthorized"
+        '429':
+          $ref: "#/responses/RateLimitExceeded"

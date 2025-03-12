@@ -1,95 +1,69 @@
-get:
-  operationId: getCampaignInsights
-  summary: Get campaign insights with fallback support
-  description: |
-    Returns metrics with fallback strategy. Base metrics (imp, reach) always available. 
-    Extended metrics (video) when accessible. Use fields parameter to control metric sets.
-  parameters:
-    - name: date_preset
-      in: query
-      description: Time range for metrics retrieval. Defaults to last_7d if longer ranges fail
-      schema:
-        type: string
-        enum: [today, yesterday, last_3d, last_7d, last_30d, this_month, last_month]
-        default: last_7d
-    - name: fields
-      in: query
-      description: Metrics to retrieve. Start with base metrics, add video metrics if needed
-      required: true
-      schema:
-        type: string
-        example: "impressions,reach,spend,inline_post_engagement"
-    - name: level
-      in: query
-      description: Data aggregation level. Use ad for most granular data
-      schema:
-        type: string
-        enum: [ad, adset, campaign, account]
-        default: ad
-    - name: use_account_attribution_setting
-      in: query
-      description: Match Ads Manager attribution settings
-      schema:
-        type: boolean
-        default: true
-    - name: breakdowns
-      in: query
-      description: Single breakdown dimension. Will be ignored if data unavailable
-      schema:
-        type: array
-        items:
-          type: string
-          enum: [publisher_platform, platform_position, age, gender, region]
-        example: ["platform_position"]
-        maxItems: 1
-    - name: filtering
-      in: query
-      description: Required for platform metrics. Removed if causing errors
-      schema:
-        type: array
-        items:
-          type: object
-          properties:
-            field:
-              type: string
-              enum: [publisher_platform]
-              example: "publisher_platform"
-            operator:
-              type: string
-              enum: [IN]
-              example: "IN"
-            value:
-              type: array
-              items:
-                type: string
-              example: ["instagram"]
-        maxItems: 3
-  responses:
-    '200':
-      description: Successfully retrieved insights
-      headers:
-        X-Business-Use-Case-Usage:
-          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/BusinessUseCaseUsage"
-        X-Rate-Limit-Reset:
-          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/RateLimitReset"
-        Cache-Control:
-          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/CacheControl"
-      content:
-        application/json:
+paths:
+  /getCampaignInsights:
+    get:
+      summary: Get campaign insights
+      description: Get performance metrics for a specific campaign
+      operationId: getCampaignInsights
+      tags:
+        - Insights
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
           schema:
-            $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/InsightsResponse"
-    '206':
-      description: Partial data available
-      headers:
-        Retry-After:
-          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/RetryAfter"
-      content:
-        application/json:
+            type: string
+            example: "23847392874"
+        - name: fields
+          in: query
+          required: true
           schema:
-            $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/InsightsResponse"
-    '400':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/BadRequest"
-    '401':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/Unauthorized"
-    '429':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/RateLimitExceeded"
+            type: array
+            items:
+              type: string
+              enum:
+                - impressions
+                - reach
+                - spend
+                - inline_post_engagement
+                - video_p25_watched_actions
+                - video_p50_watched_actions
+                - video_p75_watched_actions
+                - video_p95_watched_actions
+                - video_avg_time_watched_actions
+        - name: date_preset
+          in: query
+          schema:
+            type: string
+            enum:
+              - today
+              - yesterday
+              - this_month
+              - last_month
+              - this_quarter
+              - lifetime
+        - name: time_increment
+          in: query
+          schema:
+            type: integer
+            enum: [1, 7, 28]
+            description: Group results by N days
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/InsightsResponse"
+        '400':
+          $ref: "#/responses/BadRequest"
+        '401':
+          $ref: "#/responses/Unauthorized"
+        '429':
+          $ref: "#/responses/RateLimitExceeded"

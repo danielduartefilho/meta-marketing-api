@@ -1,27 +1,21 @@
-get:
-  operationId: getPageAccessToken
-  summary: Get Facebook Page Access Token
-  description: |
-    Retrieves a page access token for the Wiemspro Brasil page (ID: 102264027940184).
-    If the system user token is used and the request fails due to missing permissions, 
-    this endpoint must be called first to get a valid page token.
-  parameters:
-    - name: fields
-      in: query
-      required: true
-      schema:
-        type: string
-        example: "access_token"
-  responses:
-    '200':
-      description: Successfully retrieved page access token
-      content:
-        application/json:
-          schema:
-            $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/PageToken"
-    '400':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/BadRequest"
-    '401':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/Unauthorized"
-    '429':
-      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/RateLimitExceeded"
+paths:
+  /getPageAccessToken:
+    get:
+      summary: Get page access token
+      description: Retrieve a page access token for the specified page ID
+      operationId: getPageAccessToken
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/PageToken"
+        '400':
+          $ref: "#/responses/BadRequest"
+        '401':
+          $ref: "#/responses/Unauthorized"
+        '429':
+          $ref: "#/responses/RateLimitExceeded"

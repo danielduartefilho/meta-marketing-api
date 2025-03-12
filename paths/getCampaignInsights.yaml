@@ -1,69 +1,66 @@
-paths:
-  /getCampaignInsights:
-    get:
-      summary: Get campaign insights
-      description: Get performance metrics for a specific campaign
-      operationId: getCampaignInsights
-      tags:
-        - Insights
-      parameters:
-        - name: campaign_id
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "23847392874"
-        - name: fields
-          in: query
-          required: true
-          schema:
-            type: array
-            items:
-              type: string
-              enum:
-                - impressions
-                - reach
-                - spend
-                - inline_post_engagement
-                - video_p25_watched_actions
-                - video_p50_watched_actions
-                - video_p75_watched_actions
-                - video_p95_watched_actions
-                - video_avg_time_watched_actions
-        - name: date_preset
-          in: query
-          schema:
-            type: string
-            enum:
-              - today
-              - yesterday
-              - this_month
-              - last_month
-              - this_quarter
-              - lifetime
-        - name: time_increment
-          in: query
-          schema:
-            type: integer
-            enum: [1, 7, 28]
-            description: Group results by N days
-      responses:
-        '200':
-          description: Success
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "../components/headers.yaml#/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "../components/headers.yaml#/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "../components/schemas.yaml#/schemas/InsightsResponse"
-        '400':
-          $ref: "../components/responses.yaml#/responses/BadRequest"
-        '401':
-          $ref: "../components/responses.yaml#/responses/Unauthorized"
-        '429':
-          $ref: "../components/responses.yaml#/responses/RateLimitExceeded"
+summary: Get campaign insights
+description: Get performance metrics for a specific campaign
+operationId: getCampaignInsights
+tags:
+  - Insights
+parameters:
+  - name: campaign_id
+    in: path
+    required: true
+    schema:
+      type: string
+      example: "23847392874"
+  - name: fields
+    in: query
+    required: true
+    schema:
+      type: array
+      items:
+        type: string
+        enum:
+          - impressions
+          - reach
+          - spend
+          - inline_post_engagement
+          - video_p25_watched_actions
+          - video_p50_watched_actions
+          - video_p75_watched_actions
+          - video_p95_watched_actions
+          - video_avg_time_watched_actions
+  - name: date_preset
+    in: query
+    schema:
+      type: string
+      enum:
+        - today
+        - yesterday
+        - this_month
+        - last_month
+        - this_quarter
+        - lifetime
+  - name: time_increment
+    in: query
+    schema:
+      type: integer
+      enum: [1, 7, 28]
+      description: Group results by N days
+responses:
+  '200':
+    description: Success
+    headers:
+      X-Business-Use-Case-Usage:
+        $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
+      X-Rate-Limit-Reset:
+        $ref: "../components/headers.yaml#/headers/RateLimitReset"
+      Cache-Control:
+        $ref: "../components/headers.yaml#/headers/CacheControl"
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas.yaml#/schemas/InsightsResponse"
+  '400':
+    $ref: "../components/responses.yaml#/responses/BadRequest"
+  '401':
+    $ref: "../components/responses.yaml#/responses/Unauthorized"
+  '429':
+    $ref: "../components/responses.yaml#/responses/RateLimitExceeded"

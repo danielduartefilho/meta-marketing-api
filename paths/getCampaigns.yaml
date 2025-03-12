@@ -1,35 +1,32 @@
-paths:
-  /getCampaigns:
-    get:
-      summary: List campaigns
-      description: Get a list of all campaigns for the specified ad account
-      operationId: getCampaigns
-      tags:
-        - Campaigns
-      parameters:
-        - name: fields
-          in: query
-          required: true
-          schema:
-            type: string
-            example: "id,name,status,objective"
-      responses:
-        '200':
-          description: Success
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "../components/headers.yaml#/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "../components/headers.yaml#/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "../components/schemas.yaml#/schemas/CampaignList"
-        '400':
-          $ref: "../components/responses.yaml#/responses/BadRequest"
-        '401':
-          $ref: "../components/responses.yaml#/responses/Unauthorized"
-        '429':
-          $ref: "../components/responses.yaml#/responses/RateLimitExceeded"
+summary: List campaigns
+description: Get a list of all campaigns for the specified ad account
+operationId: getCampaigns
+tags:
+  - Campaigns
+parameters:
+  - name: fields
+    in: query
+    required: true
+    schema:
+      type: string
+      example: "id,name,status,objective"
+responses:
+  '200':
+    description: Success
+    headers:
+      X-Business-Use-Case-Usage:
+        $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
+      X-Rate-Limit-Reset:
+        $ref: "../components/headers.yaml#/headers/RateLimitReset"
+      Cache-Control:
+        $ref: "../components/headers.yaml#/headers/CacheControl"
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas.yaml#/schemas/CampaignList"
+  '400':
+    $ref: "../components/responses.yaml#/responses/BadRequest"
+  '401':
+    $ref: "../components/responses.yaml#/responses/Unauthorized"
+  '429':
+    $ref: "../components/responses.yaml#/responses/RateLimitExceeded"

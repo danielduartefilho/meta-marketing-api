@@ -1,21 +1,18 @@
-paths:
-  /getPageAccessToken:
-    get:
-      summary: Get page access token
-      description: Retrieve a page access token for the specified page ID
-      operationId: getPageAccessToken
-      tags:
-        - Authentication
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "../components/schemas.yaml#/schemas/PageToken"
-        '400':
-          $ref: "../components/responses.yaml#/responses/BadRequest"
-        '401':
-          $ref: "../components/responses.yaml#/responses/Unauthorized"
-        '429':
-          $ref: "../components/responses.yaml#/responses/RateLimitExceeded"
+summary: Get page access token
+description: Retrieve a page access token for the specified page ID
+operationId: getPageAccessToken
+tags:
+  - Authentication
+responses:
+  '200':
+    description: Success
+    content:
+      application/json:
+        schema:
+          $ref: "../components/schemas.yaml#/schemas/PageToken"
+  '400':
+    $ref: "../components/responses.yaml#/responses/BadRequest"
+  '401':
+    $ref: "../components/responses.yaml#/responses/Unauthorized"
+  '429':
+    $ref: "../components/responses.yaml#/responses/RateLimitExceeded"

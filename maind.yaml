@@ -30,6 +30,43 @@ security:
   - bearerAuth: []
 
 paths:
+  /102264027940184:
+    get:
+      operationId: getPageAccessToken
+      summary: Get page access token
+      description: Retrieve a page access token for the specified page ID
+      tags:
+        - Authentication
+      parameters:
+        - name: access_token
+          in: query
+          required: true
+          description: User access token with manage_pages permission
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success. Returns a long-lived page access token
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageToken"
+              example:
+                access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /act_{account_id}/campaigns:
     get:
       operationId: getCampaigns

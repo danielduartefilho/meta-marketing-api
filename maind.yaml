@@ -58,13 +58,54 @@ security:
   - bearerAuth: []
 
 paths:
+  /102264027940184:
+    get:
+      operationId: getPageAccessToken
+      summary: Get page access token
+      description: |
+        Get page access token for pre-configured page ID.
+        Called internally by connector using stored bearer token.
+        Requires pages_manage_ads permission.
+      tags:
+        - Authentication
+      parameters:
+        - name: access_token
+          in: query
+          required: true
+          description: User access token with pages_manage_ads permission
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success. Returns page access token
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageToken"
+              example:
+                access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /me/accounts:
     get:
       operationId: getPageAccounts
       summary: Get page accounts
       description: |
-        Internal endpoint to generate page access token.
-        Requires pages_manage_ads and pages_read_engagement permissions.
+        Backup endpoint to discover page access tokens.
+        Used if pre-configured page token fails.
+        Requires pages_manage_ads permission.
       tags:
         - Authentication
       parameters:
@@ -83,7 +124,14 @@ paths:
             default: "id,name,access_token"
       responses:
         '200':
-          description: Success. Returns page access token
+          description: Success. Returns page access tokens
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
           content:
             application/json:
               schema:
@@ -93,6 +141,62 @@ paths:
                   - id: "102264027940184"
                     name: "Test Page"
                     access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /me/adaccounts:
+    get:
+      operationId: getAdAccounts
+      summary: List ad accounts
+      description: |
+        Backup endpoint to discover ad account IDs.
+        Used if pre-configured account ID fails.
+        Requires ads_management permission.
+      tags:
+        - Authentication
+      parameters:
+        - name: access_token
+          in: query
+          required: true
+          description: Page access token with ads_management permission
+          schema:
+            type: string
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "account_id,name,account_status"
+      responses:
+        '200':
+          description: Success. Returns list of ad accounts
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdAccountList"
+              example:
+                data:
+                  - account_id: "906594379912215"
+                    name: "Main Ad Account"
+                    account_status: "ACTIVE"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/campaigns:
     get:

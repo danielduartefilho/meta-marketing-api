@@ -32,16 +32,63 @@ security:
 paths:
   /102264027940184:
     get:
-      $ref: "./paths/getPageAccessToken.yaml"
+      operationId: getPageAccessToken
+      summary: Get page access token
+      description: Retrieve a page access token for the specified page ID
+      tags:
+        - Authentication
+      parameters:
+        - $ref: "./paths/getPageAccessToken.yaml#/parameters/access_token"
+      responses:
+        $ref: "./paths/getPageAccessToken.yaml#/responses"
+
   /act_{account_id}/campaigns:
     get:
-      $ref: "./paths/getCampaigns.yaml"
+      operationId: getCampaigns
+      summary: List campaigns
+      description: Get a list of all campaigns for the specified ad account
+      tags:
+        - Campaigns
+      parameters:
+        - $ref: "./paths/getCampaigns.yaml#/parameters/account_id"
+        - $ref: "./paths/getCampaigns.yaml#/parameters/access_token"
+        - $ref: "./paths/getCampaigns.yaml#/parameters/fields"
+        - $ref: "./paths/getCampaigns.yaml#/parameters/limit"
+        - $ref: "./paths/getCampaigns.yaml#/parameters/after"
+      responses:
+        $ref: "./paths/getCampaigns.yaml#/responses"
+
   /act_{account_id}/campaigns/{campaign_id}:
     get:
-      $ref: "./paths/getCampaignById.yaml"
+      operationId: getCampaignById
+      summary: Get campaign details
+      description: Get detailed information about a specific campaign
+      tags:
+        - Campaigns
+      parameters:
+        - $ref: "./paths/getCampaignById.yaml#/parameters/account_id"
+        - $ref: "./paths/getCampaignById.yaml#/parameters/campaign_id"
+        - $ref: "./paths/getCampaignById.yaml#/parameters/access_token"
+        - $ref: "./paths/getCampaignById.yaml#/parameters/fields"
+      responses:
+        $ref: "./paths/getCampaignById.yaml#/responses"
+
   /act_{account_id}/campaigns/{campaign_id}/insights:
     get:
-      $ref: "./paths/getCampaignInsights.yaml"
+      operationId: getCampaignInsights
+      summary: Get campaign insights
+      description: Get performance metrics for a specific campaign
+      tags:
+        - Insights
+      parameters:
+        - $ref: "./paths/getCampaignInsights.yaml#/parameters/account_id"
+        - $ref: "./paths/getCampaignInsights.yaml#/parameters/campaign_id"
+        - $ref: "./paths/getCampaignInsights.yaml#/parameters/access_token"
+        - $ref: "./paths/getCampaignInsights.yaml#/parameters/fields"
+        - $ref: "./paths/getCampaignInsights.yaml#/parameters/date_preset"
+        - $ref: "./paths/getCampaignInsights.yaml#/parameters/time_increment"
+      responses:
+        $ref: "./paths/getCampaignInsights.yaml#/responses"
 
 components:
   securitySchemes:

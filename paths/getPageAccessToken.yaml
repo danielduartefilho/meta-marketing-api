@@ -4,7 +4,8 @@ operationId: getPageAccessToken
 tags:
   - Authentication
 parameters:
-  - name: access_token
+  access_token:
+    name: access_token
     in: header
     required: true
     description: User access token with manage_pages permission

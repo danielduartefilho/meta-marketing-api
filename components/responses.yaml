@@ -3,21 +3,21 @@ BadRequest:
   content:
     application/json:
       schema:
-        $ref: "./schemas.yaml#/ErrorResponse"
+        $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/ErrorResponse"
 
 Unauthorized:
   description: Token expired or invalid
   content:
     application/json:
       schema:
-        $ref: "./schemas.yaml#/ErrorResponse"
+        $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/ErrorResponse"
 
 RateLimitExceeded:
   description: Rate limit exceeded
   headers:
     Retry-After:
-      $ref: "./headers.yaml#/RetryAfter"
+      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/RetryAfter"
   content:
     application/json:
       schema:
-        $ref: "./schemas.yaml#/ErrorResponse"
+        $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/ErrorResponse"

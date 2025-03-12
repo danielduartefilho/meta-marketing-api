@@ -21,18 +21,18 @@ get:
       description: Successfully retrieved campaign details
       headers:
         X-Business-Use-Case-Usage:
-          $ref: "../components/headers.yaml#/BusinessUseCaseUsage"
+          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/BusinessUseCaseUsage"
         X-Rate-Limit-Reset:
-          $ref: "../components/headers.yaml#/RateLimitReset"
+          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/RateLimitReset"
         Cache-Control:
-          $ref: "../components/headers.yaml#/CacheControl"
+          $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml#/CacheControl"
       content:
         application/json:
           schema:
-            $ref: "../components/schemas.yaml#/Campaign"
+            $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml#/Campaign"
     '400':
-      $ref: "../components/responses.yaml#/BadRequest"
+      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/BadRequest"
     '401':
-      $ref: "../components/responses.yaml#/Unauthorized"
+      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/Unauthorized"
     '429':
-      $ref: "../components/responses.yaml#/RateLimitExceeded"
+      $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml#/RateLimitExceeded"

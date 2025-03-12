@@ -35,7 +35,15 @@ servers:
 security:
   - BearerAuth: []
 
-paths: {}
+paths:
+  /102264027940184:
+    $ref: './campaign-management.yaml#/paths/~1102264027940184'
+  /act_906594379912215/campaigns:
+    $ref: './campaign-management.yaml#/paths/~1act_906594379912215~1campaigns'
+  /{campaign_id}:
+    $ref: './campaign-management.yaml#/paths/~1{campaign_id}'
+  /act_906594379912215/insights:
+    $ref: './campaign-insights.yaml#/paths/~1act_906594379912215~1insights'
 
 components:
   securitySchemes:

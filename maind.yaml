@@ -52,10 +52,111 @@ components:
       description: Meta API Access Token
 
   headers:
-    $ref: "./components/headers.yaml#/headers"
+    BusinessUseCaseUsage:
+      description: Business use case usage information
+      schema:
+        type: string
+    RateLimitReset:
+      description: Time until rate limit reset in seconds
+      schema:
+        type: integer
+    CacheControl:
+      description: Cache control directives
+      schema:
+        type: string
 
   responses:
-    $ref: "./components/responses.yaml#/responses"
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Invalid or missing access token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
 
   schemas:
-    $ref: "./components/schemas.yaml#/schemas"
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+            type:
+              type: string
+    PageToken:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Page access token
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, DELETED]
+        objective:
+          type: string
+          enum: [LINK_CLICKS, POST_ENGAGEMENT, VIDEO_VIEWS]
+    CampaignList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Campaign"
+        paging:
+          type: object
+          properties:
+            cursors:
+              type: object
+              properties:
+                before:
+                  type: string
+                after:
+                  type: string
+    InsightsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              impressions:
+                type: integer
+              reach:
+                type: integer
+              spend:
+                type: number
+              inline_post_engagement:
+                type: integer
+              video_p25_watched_actions:
+                type: integer
+              video_p50_watched_actions:
+                type: integer
+              video_p75_watched_actions:
+                type: integer
+              video_p95_watched_actions:
+                type: integer
+              video_avg_time_watched_actions:
+                type: number

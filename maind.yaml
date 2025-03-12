@@ -39,7 +39,7 @@ paths:
         - Authentication
       parameters:
         - name: access_token
-          in: header
+          in: query
           required: true
           description: User access token with manage_pages permission
           schema:
@@ -85,7 +85,7 @@ paths:
         - Campaigns
       parameters:
         - name: access_token
-          in: header
+          in: query
           required: true
           description: Page access token with ads_management permission
           schema:
@@ -166,7 +166,7 @@ paths:
         - Campaigns
       parameters:
         - name: access_token
-          in: header
+          in: query
           required: true
           description: Page access token with ads_management permission
           schema:
@@ -229,7 +229,7 @@ paths:
         - Insights
       parameters:
         - name: access_token
-          in: header
+          in: query
           required: true
           description: Page access token with ads_read permission
           schema:

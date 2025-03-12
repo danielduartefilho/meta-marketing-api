@@ -9,25 +9,26 @@ info:
     1. User Bearer Token:
        - Stored in connector configuration
        - Required permissions:
-         * pages_manage_ads (for ad management)
+         * pages_show_list (for page discovery)
          * pages_read_engagement (for metrics)
          * ads_management (for campaign access)
          * ads_read (for insights)
+         * business_management (for account access)
        - Token Refresh:
          * On error 190 (expired token)
          * On error 200 (permission error)
          * On error 10 (app configuration)
 
     2. Resource Discovery:
-       a. Page Token:
-          - Call /me/accounts to list available pages
+       a. Page Access:
+          - Call /me/accounts with pages_show_list
           - Select page with ID 102264027940184
-          - Extract and cache page access token
-          - Cache duration: 1 hour
-          - Auto-refresh on expiration
+          - Use pages_read_engagement for metrics
+          - Cache page details for 24 hours
 
        b. Ad Account:
-          - Call /me/adaccounts to list accounts
+          - Call /me/businesses with business_management
+          - Get ad accounts via /business/{id}/owned_ad_accounts
           - Select account with ID 906594379912215
           - Format: Remove 'act_' prefix for API calls
           - Cache account details and status
@@ -44,10 +45,11 @@ info:
     ad-account-id: "906594379912215"
     token-cache-duration: 3600
     required-permissions:
-      - pages_manage_ads
+      - pages_show_list
       - pages_read_engagement
       - ads_management
       - ads_read
+      - business_management
     error-retry:
       max-attempts: 3
       backoff-ms: 1000
@@ -59,12 +61,15 @@ info:
         - code: 10
           action: verify_app_config
     cache-config:
-      page-token:
-        duration: 3600
-        refresh-before: 300
+      page-info:
+        duration: 86400     # 24 hours
+        refresh-before: 3600 # 1 hour before
       account-info:
-        duration: 86400
-        refresh-before: 3600
+        duration: 86400     # 24 hours
+        refresh-before: 3600 # 1 hour before
+      business-info:
+        duration: 604800    # 7 days
+        refresh-before: 86400 # 1 day before
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -95,9 +100,9 @@ paths:
       operationId: getPageAccounts
       summary: Get page accounts
       description: |
-        List available pages and get access tokens.
-        Called internally to get token for page ID 102264027940184.
-        Required permissions: pages_manage_ads
+        List available pages.
+        Called internally to get page ID 102264027940184.
+        Required permissions: pages_show_list
       tags:
         - Authentication
       security:
@@ -109,10 +114,10 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "id,name,access_token,tasks"
+            default: "id,name,category,category_list,tasks"
       responses:
         '200':
-          description: Success. Returns page access tokens
+          description: Success. Returns page list
           headers:
             X-Business-Use-Case-Usage:
               $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -121,7 +126,7 @@ paths:
             Cache-Control:
               schema:
                 type: string
-                default: "private, max-age=3600"
+                default: "private, max-age=86400"
           content:
             application/json:
               schema:
@@ -130,13 +135,126 @@ paths:
                 data:
                   - id: "102264027940184"
                     name: "Test Page"
-                    access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+                    category: "Business"
+                    category_list: [
+                      {
+                        "id": "2500",
+                        "name": "Business Service"
+                      }
+                    ]
                     tasks: [
-                      "MANAGE_JOBS",
                       "CREATE_CONTENT",
                       "MODERATE_CONTENT",
-                      "MANAGE_MESSAGES"
+                      "READ_INSIGHTS"
                     ]
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /me/businesses:
+    get:
+      operationId: getBusinesses
+      summary: Get business accounts
+      description: |
+        List available business accounts.
+        Required permissions: business_management
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "id,name,verification_status,is_disabled"
+      responses:
+        '200':
+          description: Success. Returns business accounts
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              schema:
+                type: string
+                default: "private, max-age=604800"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessList"
+              example:
+                data:
+                  - id: "123456789"
+                    name: "Main Business"
+                    verification_status: "verified"
+                    is_disabled: false
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /business/{business_id}/owned_ad_accounts:
+    get:
+      operationId: getBusinessAdAccounts
+      summary: Get business ad accounts
+      description: |
+        List ad accounts owned by business.
+        Required permissions: business_management, ads_management
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          description: Business ID
+          schema:
+            type: string
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "account_id,name,account_status,disable_reason,currency,timezone_name,business"
+      responses:
+        '200':
+          description: Success. Returns list of ad accounts
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              schema:
+                type: string
+                default: "private, max-age=86400"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdAccountList"
+              example:
+                data:
+                  - account_id: "906594379912215"
+                    name: "Main Ad Account"
+                    account_status: "ACTIVE"
+                    disable_reason: null
+                    currency: "USD"
+                    timezone_name: "America/Los_Angeles"
+                    business: {
+                      "id": "123456789",
+                      "name": "Main Business"
+                    }
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -406,10 +524,11 @@ components:
       description: |
         User access token stored in connector.
         Required permissions:
-        - pages_manage_ads (for ad management)
+        - pages_show_list (for page discovery)
         - pages_read_engagement (for metrics)
         - ads_management (for campaign access)
         - ads_read (for insights)
+        - business_management (for account access)
 
   headers:
     BusinessUseCaseUsage:
@@ -670,3 +789,31 @@ components:
             after:
               type: string
               example: "MQZDZD"
+    BusinessList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Business"
+        paging:
+          $ref: "#/components/schemas/Paging"
+    Business:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Business ID
+          example: "123456789"
+        name:
+          type: string
+          description: Business name
+          example: "Main Business"
+        verification_status:
+          type: string
+          description: Verification status
+          example: "verified"
+        is_disabled:
+          type: boolean
+          description: Is disabled
+          example: false

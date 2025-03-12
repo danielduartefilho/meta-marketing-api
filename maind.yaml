@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Meta Marketing API Connector
+  title: Meta Marketing API
   description: |
     API to access Meta v22.0 marketing campaigns and insights.
     Rate Limits:
@@ -10,7 +10,7 @@ info:
     - Use date filters to reduce query size
     - Request unique metrics separately
     - Cache responses for 5 minutes
-  version: '1.4.0'
+  version: '22.0'
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -33,29 +33,31 @@ servers:
     description: Meta Graph API v22.0
 
 security:
-  - BearerAuth: []
+  - bearerAuth: []
 
 paths:
   /102264027940184:
-    $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/paths/getPageAccessToken.yaml"
+    $ref: "./paths/getPageAccessToken.yaml"
   /act_906594379912215/campaigns:
-    $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/paths/getCampaigns.yaml"
+    $ref: "./paths/getCampaigns.yaml"
   /{campaign_id}:
-    $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/paths/getCampaignById.yaml"
+    $ref: "./paths/getCampaignById.yaml"
   /act_906594379912215/insights:
-    $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/paths/getCampaignInsights.yaml"
+    $ref: "./paths/getCampaignInsights.yaml"
 
 components:
   securitySchemes:
-    BearerAuth:
+    bearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: JWT
+      description: Meta API Access Token
 
   headers:
-    $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/headers.yaml"
+    $ref: "./components/headers.yaml#/headers"
 
   responses:
-    $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/responses.yaml"
+    $ref: "./components/responses.yaml#/responses"
 
   schemas:
-    $ref: "https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/components/schemas.yaml"
+    $ref: "./components/schemas.yaml#/schemas"

@@ -14,6 +14,8 @@ info:
          * ads_management (for campaign access)
          * ads_read (for insights)
          * business_management (for account access)
+         * read_insights (for detailed metrics)
+         * attribution_read (for conversion data)
        - Token Refresh:
          * On error 190 (expired token)
          * On error 200 (permission error)
@@ -24,13 +26,15 @@ info:
           - Call /me/accounts with pages_show_list
           - Select page with ID 102264027940184
           - Use pages_read_engagement for metrics
+          - Use read_insights for detailed data
           - Cache page details for 24 hours
 
        b. Ad Account:
           - Call /me/businesses with business_management
           - Get ad accounts via /business/{id}/owned_ad_accounts
           - Select account with ID 906594379912215
-          - Format: Remove 'act_' prefix for API calls
+          - Use ads_management for campaign access
+          - Use attribution_read for conversion data
           - Cache account details and status
 
     3. Error Handling:
@@ -50,6 +54,8 @@ info:
       - ads_management
       - ads_read
       - business_management
+      - read_insights
+      - attribution_read
     error-retry:
       max-attempts: 3
       backoff-ms: 1000
@@ -64,12 +70,28 @@ info:
       page-info:
         duration: 86400     # 24 hours
         refresh-before: 3600 # 1 hour before
+        fields:
+          - id
+          - name
+          - category
+          - tasks
+          - engagement
       account-info:
         duration: 86400     # 24 hours
         refresh-before: 3600 # 1 hour before
+        fields:
+          - account_id
+          - name
+          - status
+          - currency
+          - timezone
       business-info:
         duration: 604800    # 7 days
         refresh-before: 86400 # 1 day before
+        fields:
+          - id
+          - name
+          - verification_status
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -102,7 +124,7 @@ paths:
       description: |
         List available pages.
         Called internally to get page ID 102264027940184.
-        Required permissions: pages_show_list
+        Required permissions: pages_show_list, pages_read_engagement
       tags:
         - Authentication
       security:
@@ -114,7 +136,7 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "id,name,category,category_list,tasks"
+            default: "id,name,category,category_list,tasks,engagement{count_lifetime}"
       responses:
         '200':
           description: Success. Returns page list
@@ -147,6 +169,9 @@ paths:
                       "MODERATE_CONTENT",
                       "READ_INSIGHTS"
                     ]
+                    engagement: {
+                      "count_lifetime": 1234
+                    }
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -172,7 +197,7 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "id,name,verification_status,is_disabled"
+            default: "id,name,verification_status,is_disabled,primary_page,business_users"
       responses:
         '200':
           description: Success. Returns business accounts
@@ -195,6 +220,18 @@ paths:
                     name: "Main Business"
                     verification_status: "verified"
                     is_disabled: false
+                    primary_page: {
+                      "id": "102264027940184",
+                      "name": "Test Page"
+                    }
+                    business_users: {
+                      "data": [
+                        {
+                          "id": "987654321",
+                          "role": "ADMIN"
+                        }
+                      ]
+                    }
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -226,7 +263,7 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "account_id,name,account_status,disable_reason,currency,timezone_name,business"
+            default: "account_id,name,account_status,disable_reason,currency,timezone_name,business,insights.date_preset(lifetime){spend}"
       responses:
         '200':
           description: Success. Returns list of ad accounts
@@ -254,6 +291,13 @@ paths:
                     business: {
                       "id": "123456789",
                       "name": "Main Business"
+                    }
+                    insights: {
+                      "data": [
+                        {
+                          "spend": "1234.56"
+                        }
+                      ]
                     }
         '400':
           $ref: "#/components/responses/BadRequest"
@@ -529,6 +573,8 @@ components:
         - ads_management (for campaign access)
         - ads_read (for insights)
         - business_management (for account access)
+        - read_insights (for detailed metrics)
+        - attribution_read (for conversion data)
 
   headers:
     BusinessUseCaseUsage:

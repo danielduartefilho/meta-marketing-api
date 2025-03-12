@@ -4,6 +4,25 @@ info:
   description: |
     Meta Marketing API for campaign management and insights.
     Rate limits and best practices are enforced.
+
+    # Authentication Flow
+    1. Get a User Access Token from Meta:
+       - Go to https://developers.facebook.com/tools/explorer/
+       - Select your app
+       - Add permissions: manage_pages, ads_management, ads_read
+       - Generate Access Token
+
+    2. Get Page Access Token:
+       - Call /102264027940184 with user access token
+       - Store returned page access token
+
+    3. Get Ad Account ID:
+       - Call /me/adaccounts with page access token
+       - Select desired account from response
+
+    4. Access Campaign Data:
+       - Use page access token and account ID in subsequent calls
+       - Follow rate limits and caching guidelines
   version: '22.0'
   x-rate-limiting:
     standard-tier:
@@ -34,7 +53,10 @@ paths:
     get:
       operationId: getPageAccessToken
       summary: Get page access token
-      description: Retrieve a page access token for the specified page ID
+      description: |
+        Retrieve a page access token for the specified page ID.
+        Requires a user access token with manage_pages permission.
+        Get user token at: https://developers.facebook.com/tools/explorer/
       tags:
         - Authentication
       parameters:
@@ -71,7 +93,9 @@ paths:
     get:
       operationId: getCampaigns
       summary: List campaigns
-      description: Get a list of all campaigns for the specified ad account
+      description: |
+        Get a list of all campaigns for the specified ad account.
+        Requires account_id from /me/adaccounts and page access token.
       tags:
         - Campaigns
       parameters:
@@ -144,7 +168,10 @@ paths:
     get:
       operationId: getCampaignById
       summary: Get campaign details
-      description: Get detailed information about a specific campaign
+      description: |
+        Get detailed information about a specific campaign.
+        Requires account_id from /me/adaccounts, campaign_id from /campaigns,
+        and page access token.
       tags:
         - Campaigns
       parameters:
@@ -206,7 +233,10 @@ paths:
     get:
       operationId: getCampaignInsights
       summary: Get campaign insights
-      description: Get performance metrics for a specific campaign
+      description: |
+        Get performance metrics for a specific campaign.
+        Requires account_id from /me/adaccounts, campaign_id from /campaigns,
+        and page access token with ads_read permission.
       tags:
         - Insights
       parameters:
@@ -307,14 +337,17 @@ paths:
     get:
       operationId: getAdAccounts
       summary: List ad accounts
-      description: Get a list of all ad accounts associated with the user
+      description: |
+        Get a list of all ad accounts associated with the user.
+        Use this endpoint to discover available ad account IDs.
+        Requires a page access token from getPageAccessToken.
       tags:
         - Authentication
       parameters:
         - name: access_token
           in: query
           required: true
-          description: User access token with ads_management permission
+          description: Page access token with ads_management permission
           schema:
             type: string
         - name: fields

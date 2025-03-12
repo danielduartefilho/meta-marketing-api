@@ -4,35 +4,56 @@ operationId: getCampaignById
 tags:
   - Campaigns
 parameters:
+  - name: account_id
+    in: path
+    required: true
+    description: Ad account ID (act_906594379912215)
+    schema:
+      type: string
+      pattern: '^act_\d+$'
+      example: "act_906594379912215"
   - name: campaign_id
     in: path
     required: true
+    description: Campaign ID to retrieve details for
     schema:
       type: string
       example: "23847392874"
+  - name: access_token
+    in: header
+    required: true
+    description: Page access token with ads_management permission
+    schema:
+      type: string
   - name: fields
     in: query
     required: true
+    description: Comma-separated list of fields to return
     schema:
       type: string
       example: "id,name,status,objective"
 responses:
   '200':
-    description: Success
+    description: Success. Returns detailed campaign information
     headers:
       X-Business-Use-Case-Usage:
-        $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
+        $ref: "#/components/headers/BusinessUseCaseUsage"
       X-Rate-Limit-Reset:
-        $ref: "../components/headers.yaml#/headers/RateLimitReset"
+        $ref: "#/components/headers/RateLimitReset"
       Cache-Control:
-        $ref: "../components/headers.yaml#/headers/CacheControl"
+        $ref: "#/components/headers/CacheControl"
     content:
       application/json:
         schema:
-          $ref: "../components/schemas.yaml#/schemas/Campaign"
+          $ref: "#/components/schemas/Campaign"
+        example:
+          id: "23847392874"
+          name: "Website Traffic Campaign"
+          status: "ACTIVE"
+          objective: "LINK_CLICKS"
   '400':
-    $ref: "../components/responses.yaml#/responses/BadRequest"
+    $ref: "#/components/responses/BadRequest"
   '401':
-    $ref: "../components/responses.yaml#/responses/Unauthorized"
+    $ref: "#/components/responses/Unauthorized"
   '429':
-    $ref: "../components/responses.yaml#/responses/RateLimitExceeded"
+    $ref: "#/components/responses/RateLimitExceeded"

@@ -4,15 +4,31 @@ operationId: getCampaignInsights
 tags:
   - Insights
 parameters:
+  - name: account_id
+    in: path
+    required: true
+    description: Ad account ID (act_906594379912215)
+    schema:
+      type: string
+      pattern: '^act_\d+$'
+      example: "act_906594379912215"
   - name: campaign_id
     in: path
     required: true
+    description: Campaign ID to retrieve insights for
     schema:
       type: string
       example: "23847392874"
+  - name: access_token
+    in: header
+    required: true
+    description: Page access token with ads_read permission
+    schema:
+      type: string
   - name: fields
     in: query
     required: true
+    description: List of metrics to return
     schema:
       type: array
       items:
@@ -29,6 +45,7 @@ parameters:
           - video_avg_time_watched_actions
   - name: date_preset
     in: query
+    description: Predefined date range for the report
     schema:
       type: string
       enum:
@@ -38,29 +55,44 @@ parameters:
         - last_month
         - this_quarter
         - lifetime
+      default: "last_month"
   - name: time_increment
     in: query
+    description: Group results by N days
     schema:
       type: integer
       enum: [1, 7, 28]
-      description: Group results by N days
+      default: 1
 responses:
   '200':
-    description: Success
+    description: Success. Returns campaign performance metrics
     headers:
       X-Business-Use-Case-Usage:
-        $ref: "../components/headers.yaml#/headers/BusinessUseCaseUsage"
+        $ref: "#/components/headers/BusinessUseCaseUsage"
       X-Rate-Limit-Reset:
-        $ref: "../components/headers.yaml#/headers/RateLimitReset"
+        $ref: "#/components/headers/RateLimitReset"
       Cache-Control:
-        $ref: "../components/headers.yaml#/headers/CacheControl"
+        $ref: "#/components/headers/CacheControl"
     content:
       application/json:
         schema:
-          $ref: "../components/schemas.yaml#/schemas/InsightsResponse"
+          $ref: "#/components/schemas/InsightsResponse"
+        example:
+          data:
+            - date_start: "2025-03-01"
+              date_end: "2025-03-01"
+              impressions: 1234
+              reach: 987
+              spend: 50.25
+              inline_post_engagement: 45
+              video_p25_watched_actions: 800
+              video_p50_watched_actions: 600
+              video_p75_watched_actions: 400
+              video_p95_watched_actions: 200
+              video_avg_time_watched_actions: 15.5
   '400':
-    $ref: "../components/responses.yaml#/responses/BadRequest"
+    $ref: "#/components/responses/BadRequest"
   '401':
-    $ref: "../components/responses.yaml#/responses/Unauthorized"
+    $ref: "#/components/responses/Unauthorized"
   '429':
-    $ref: "../components/responses.yaml#/responses/RateLimitExceeded"
+    $ref: "#/components/responses/RateLimitExceeded"

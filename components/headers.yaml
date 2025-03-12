@@ -1,27 +1,28 @@
-BusinessUseCaseUsage:
-  description: Current API usage and limits
-  schema:
-    type: object
-    properties:
-      rate_limit_usage:
-        type: integer
-      points_remaining:
-        type: integer
-      reset_time:
-        type: string
+headers:
+  BusinessUseCaseUsage:
+    description: Current API usage and limits
+    schema:
+      type: object
+      properties:
+        rate_limit_usage:
+          type: integer
+        points_remaining:
+          type: integer
+        reset_time:
+          type: string
 
-RateLimitReset:
-  description: Seconds until rate limit reset
-  schema:
-    type: integer
+  RateLimitReset:
+    description: Seconds until rate limit reset
+    schema:
+      type: integer
 
-RetryAfter:
-  description: Seconds to wait before retry
-  schema:
-    type: integer
+  RetryAfter:
+    description: Seconds to wait before retry
+    schema:
+      type: integer
 
-CacheControl:
-  description: Caching directives
-  schema:
-    type: string
-    example: "max-age=300"
+  CacheControl:
+    description: Caching directives
+    schema:
+      type: string
+      example: "max-age=300"

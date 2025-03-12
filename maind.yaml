@@ -6,23 +6,20 @@ info:
     Rate limits and best practices are enforced.
 
     # Authentication Flow
-    1. Get a User Access Token from Meta:
-       - Go to https://developers.facebook.com/tools/explorer/
-       - Select your app
-       - Add permissions: manage_pages, ads_management, ads_read
-       - Generate Access Token
+    1. User Access Token (required for getPageAccessToken):
+       EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
 
-    2. Get Page Access Token:
-       - Call /102264027940184 with user access token
-       - Store returned page access token
+    2. Page Access Token (returned by getPageAccessToken):
+       EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
 
-    3. Get Ad Account ID:
-       - Call /me/adaccounts with page access token
-       - Select desired account from response
+    3. Ad Account ID (from getAdAccounts):
+       act_906594379912215
 
-    4. Access Campaign Data:
-       - Use page access token and account ID in subsequent calls
-       - Follow rate limits and caching guidelines
+    4. Campaign ID (from getCampaigns):
+       23847392874
+
+    These values are pre-configured in the connector for testing.
+    For production use, obtain your own tokens via Meta's authentication flow.
   version: '22.0'
   x-rate-limiting:
     standard-tier:
@@ -55,8 +52,7 @@ paths:
       summary: Get page access token
       description: |
         Retrieve a page access token for the specified page ID.
-        Requires a user access token with manage_pages permission.
-        Get user token at: https://developers.facebook.com/tools/explorer/
+        Example user token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
       tags:
         - Authentication
       parameters:
@@ -66,6 +62,7 @@ paths:
           description: User access token with manage_pages permission
           schema:
             type: string
+            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
       responses:
         '200':
           description: Success. Returns a long-lived page access token
@@ -95,7 +92,8 @@ paths:
       summary: List campaigns
       description: |
         Get a list of all campaigns for the specified ad account.
-        Requires account_id from /me/adaccounts and page access token.
+        Example account_id: act_906594379912215
+        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
       tags:
         - Campaigns
       parameters:
@@ -113,6 +111,7 @@ paths:
           description: Page access token with ads_management permission
           schema:
             type: string
+            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
         - name: fields
           in: query
           required: true
@@ -170,8 +169,9 @@ paths:
       summary: Get campaign details
       description: |
         Get detailed information about a specific campaign.
-        Requires account_id from /me/adaccounts, campaign_id from /campaigns,
-        and page access token.
+        Example account_id: act_906594379912215
+        Example campaign_id: 23847392874
+        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
       tags:
         - Campaigns
       parameters:
@@ -196,6 +196,7 @@ paths:
           description: Page access token with ads_management permission
           schema:
             type: string
+            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
         - name: fields
           in: query
           required: true
@@ -235,8 +236,9 @@ paths:
       summary: Get campaign insights
       description: |
         Get performance metrics for a specific campaign.
-        Requires account_id from /me/adaccounts, campaign_id from /campaigns,
-        and page access token with ads_read permission.
+        Example account_id: act_906594379912215
+        Example campaign_id: 23847392874
+        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
       tags:
         - Insights
       parameters:
@@ -261,6 +263,7 @@ paths:
           description: Page access token with ads_read permission
           schema:
             type: string
+            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
         - name: fields
           in: query
           required: true
@@ -339,8 +342,7 @@ paths:
       summary: List ad accounts
       description: |
         Get a list of all ad accounts associated with the user.
-        Use this endpoint to discover available ad account IDs.
-        Requires a page access token from getPageAccessToken.
+        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
       tags:
         - Authentication
       parameters:
@@ -350,6 +352,7 @@ paths:
           description: Page access token with ads_management permission
           schema:
             type: string
+            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
         - name: fields
           in: query
           required: true

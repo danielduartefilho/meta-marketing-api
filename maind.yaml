@@ -5,23 +5,23 @@ info:
     Meta Marketing API for campaign management and insights.
     Rate limits and best practices are enforced.
 
-    # Automatic Authentication Flow
-    The connector automatically handles the following steps:
-    1. Bearer Token: Automatically added to all requests
-    2. Page Access Token: Retrieved via /me/accounts
-    3. Ad Account ID: Retrieved via /me/adaccounts
-    4. Campaign Access: Uses discovered IDs automatically
-
-    # Test Values (Pre-configured)
-    - User Access Token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
-    - Page Access Token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
-    - Ad Account ID: act_906594379912215
+    # Internal Configuration
+    The connector uses these pre-configured values:
+    - Page ID: 102264027940184
+    - Ad Account ID: 906594379912215 (without act_ prefix)
     - Campaign ID: 23847392874
+
+    # Authentication Flow
+    1. User Bearer Token (stored in connector)
+    2. Page Token Generation:
+       - Uses stored bearer token
+       - Calls /me/accounts internally
+       - Caches page token for 1 hour
   version: '22.0'
-  x-authentication:
-    auto-discovery: true
-    token-refresh: true
-    cache-duration: 3600
+  x-connector-config:
+    page-id: "102264027940184"
+    ad-account-id: "906594379912215"
+    token-cache-duration: 3600
     required-permissions:
       - manage_pages
       - ads_management
@@ -51,13 +51,13 @@ security:
   - bearerAuth: []
 
 paths:
-  /102264027940184:
+  /me/accounts:
     get:
-      operationId: getPageAccessToken
-      summary: Get page access token
+      operationId: getPageAccounts
+      summary: Get page accounts
       description: |
-        Retrieve a page access token for the specified page ID.
-        Example user token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+        Internal endpoint to generate page access token.
+        Called automatically by the connector using stored bearer token.
       tags:
         - Authentication
       parameters:
@@ -67,29 +67,25 @@ paths:
           description: User access token with manage_pages permission
           schema:
             type: string
-            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "id,name,access_token"
       responses:
         '200':
-          description: Success. Returns a long-lived page access token
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
+          description: Success. Returns page access token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageToken"
+                $ref: "#/components/schemas/PageAccountList"
               example:
-                access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
+                data:
+                  - id: "102264027940184"
+                    name: "Test Page"
+                    access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
 
   /act_{account_id}/campaigns:
     get:
@@ -97,33 +93,31 @@ paths:
       summary: List campaigns
       description: |
         Get a list of all campaigns for the specified ad account.
-        Example account_id: act_906594379912215
-        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+        Uses pre-configured account_id (906594379912215).
       tags:
         - Campaigns
       parameters:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (act_906594379912215)
+          description: Ad account ID (without act_ prefix)
           schema:
             type: string
-            pattern: '^act_\d+$'
-            example: "act_906594379912215"
+            pattern: '^\d+$'
+            example: "906594379912215"
         - name: access_token
           in: query
           required: true
-          description: Page access token with ads_management permission
+          description: Page access token (generated automatically)
           schema:
             type: string
-            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
         - name: fields
           in: query
           required: true
           description: Comma-separated list of fields to return
           schema:
             type: string
-            example: "id,name,status,objective"
+            default: "id,name,status,objective"
         - name: limit
           in: query
           description: Number of records to return per request
@@ -140,13 +134,6 @@ paths:
       responses:
         '200':
           description: Success. Returns a list of campaigns
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
           content:
             application/json:
               schema:
@@ -157,16 +144,6 @@ paths:
                     name: "Website Traffic Campaign"
                     status: "ACTIVE"
                     objective: "LINK_CLICKS"
-                paging:
-                  cursors:
-                    before: "MAZDZD"
-                    after: "MQZDZD"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/campaigns/{campaign_id}:
     get:
@@ -174,20 +151,18 @@ paths:
       summary: Get campaign details
       description: |
         Get detailed information about a specific campaign.
-        Example account_id: act_906594379912215
-        Example campaign_id: 23847392874
-        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+        Uses pre-configured account_id (906594379912215).
       tags:
         - Campaigns
       parameters:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (act_906594379912215)
+          description: Ad account ID (without act_ prefix)
           schema:
             type: string
-            pattern: '^act_\d+$'
-            example: "act_906594379912215"
+            pattern: '^\d+$'
+            example: "906594379912215"
         - name: campaign_id
           in: path
           required: true
@@ -198,27 +173,19 @@ paths:
         - name: access_token
           in: query
           required: true
-          description: Page access token with ads_management permission
+          description: Page access token (generated automatically)
           schema:
             type: string
-            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
         - name: fields
           in: query
           required: true
           description: Comma-separated list of fields to return
           schema:
             type: string
-            example: "id,name,status,objective"
+            default: "id,name,status,objective"
       responses:
         '200':
           description: Success. Returns detailed campaign information
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
           content:
             application/json:
               schema:
@@ -228,12 +195,6 @@ paths:
                 name: "Website Traffic Campaign"
                 status: "ACTIVE"
                 objective: "LINK_CLICKS"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/campaigns/{campaign_id}/insights:
     get:
@@ -241,20 +202,18 @@ paths:
       summary: Get campaign insights
       description: |
         Get performance metrics for a specific campaign.
-        Example account_id: act_906594379912215
-        Example campaign_id: 23847392874
-        Example page token: EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD
+        Uses pre-configured account_id (906594379912215).
       tags:
         - Insights
       parameters:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (act_906594379912215)
+          description: Ad account ID (without act_ prefix)
           schema:
             type: string
-            pattern: '^act_\d+$'
-            example: "act_906594379912215"
+            pattern: '^\d+$'
+            example: "906594379912215"
         - name: campaign_id
           in: path
           required: true
@@ -265,10 +224,9 @@ paths:
         - name: access_token
           in: query
           required: true
-          description: Page access token with ads_read permission
+          description: Page access token (generated automatically)
           schema:
             type: string
-            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
         - name: fields
           in: query
           required: true
@@ -287,6 +245,10 @@ paths:
                 - video_p75_watched_actions
                 - video_p95_watched_actions
                 - video_avg_time_watched_actions
+            default:
+              - impressions
+              - reach
+              - spend
         - name: date_preset
           in: query
           description: Predefined date range for the report
@@ -310,13 +272,6 @@ paths:
       responses:
         '200':
           description: Success. Returns campaign performance metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
           content:
             application/json:
               schema:
@@ -328,135 +283,6 @@ paths:
                     impressions: 1234
                     reach: 987
                     spend: 50.25
-                    inline_post_engagement: 45
-                    video_p25_watched_actions: 800
-                    video_p50_watched_actions: 600
-                    video_p75_watched_actions: 400
-                    video_p95_watched_actions: 200
-                    video_avg_time_watched_actions: 15.5
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /me/adaccounts:
-    get:
-      operationId: getAdAccounts
-      summary: List ad accounts
-      description: |
-        Automatically discover available ad accounts.
-        Called internally by the connector.
-      tags:
-        - Authentication
-      parameters:
-        - name: access_token
-          in: query
-          required: true
-          description: Page access token with ads_management permission
-          schema:
-            type: string
-            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            example: "account_id,name,account_status,business_name,currency"
-        - name: limit
-          in: query
-          description: Number of records to return per request
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 25
-        - name: after
-          in: query
-          description: Cursor for pagination
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns a list of ad accounts
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdAccountList"
-              example:
-                data:
-                  - account_id: "906594379912215"
-                    name: "Main Ad Account"
-                    account_status: "ACTIVE"
-                    business_name: "My Business"
-                    currency: "USD"
-                paging:
-                  cursors:
-                    before: "MAZDZD"
-                    after: "MQZDZD"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /me/accounts:
-    get:
-      operationId: getPageAccounts
-      summary: Get page accounts
-      description: |
-        Automatically retrieve page access tokens for all managed pages.
-        Called internally by the connector.
-      tags:
-        - Authentication
-      parameters:
-        - name: access_token
-          in: query
-          required: true
-          description: User access token with manage_pages permission
-          schema:
-            type: string
-            example: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            example: "id,name,access_token"
-      responses:
-        '200':
-          description: Success. Returns page access tokens
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageAccountList"
-              example:
-                data:
-                  - id: "102264027940184"
-                    name: "Test Page"
-                    access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
-                paging:
-                  cursors:
-                    before: "MAZDZD"
-                    after: "MQZDZD"
 
 components:
   securitySchemes:
@@ -465,9 +291,8 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        Meta API Access Token.
-        Automatically added to all requests by the connector.
-        Retrieved via /me/accounts for pages and /me/adaccounts for ads.
+        User access token stored in connector.
+        Used internally to generate page access token.
 
   headers:
     BusinessUseCaseUsage:

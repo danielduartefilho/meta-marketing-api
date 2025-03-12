@@ -2,14 +2,8 @@ openapi: 3.1.0
 info:
   title: Meta Marketing API
   description: |
-    API to access Meta v22.0 marketing campaigns and insights.
-    Rate Limits:
-    - Standard tier: 9000 points/300s (read=1pt, write=3pts)
-    - Development tier: 60 points/300s
-    Performance:
-    - Use date filters to reduce query size
-    - Request unique metrics separately
-    - Cache responses for 5 minutes
+    Meta Marketing API for campaign management and insights.
+    Rate limits and best practices are enforced.
   version: '22.0'
   x-rate-limiting:
     standard-tier:
@@ -37,13 +31,13 @@ security:
 
 paths:
   /102264027940184:
-    $ref: "./paths/getPageAccessToken.yaml"
+    $ref: "./paths/getPageAccessToken.yaml#/paths/getPageAccessToken"
   /act_906594379912215/campaigns:
-    $ref: "./paths/getCampaigns.yaml"
+    $ref: "./paths/getCampaigns.yaml#/paths/getCampaigns"
   /{campaign_id}:
-    $ref: "./paths/getCampaignById.yaml"
+    $ref: "./paths/getCampaignById.yaml#/paths/getCampaignById"
   /act_906594379912215/insights:
-    $ref: "./paths/getCampaignInsights.yaml"
+    $ref: "./paths/getCampaignInsights.yaml#/paths/getCampaignInsights"
 
 components:
   securitySchemes:

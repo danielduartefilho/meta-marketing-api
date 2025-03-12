@@ -1,0 +1,132 @@
+openapi: 3.1.0
+info:
+  title: Meta Marketing API - Campaign Management
+  description: |
+    Campaign management endpoints for Meta Marketing API v22.0.
+    Provides access to campaign creation, updates, and basic information.
+  version: '1.4.0'
+
+paths:
+  /102264027940184:
+    get:
+      operationId: getPageAccessToken
+      summary: Get Facebook Page Access Token
+      description: |
+        Retrieves a page access token for the Wiemspro Brasil page (ID: 102264027940184).
+        If the system user token is used and the request fails due to missing permissions, 
+        this endpoint must be called first to get a valid page token.
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "access_token"
+      responses:
+        '200':
+          description: Successfully retrieved page access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageToken'
+        '400':
+          $ref: '../maind.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../maind.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: '../maind.yaml#/components/responses/RateLimitExceeded'
+
+  /act_906594379912215/campaigns:
+    get:
+      operationId: getCampaigns
+      summary: Get all campaigns for an ad account
+      description: |
+        Returns all active campaigns for the specified ad account (ID: act_906594379912215).
+        If the system user token fails, the connector should fetch a page token first and retry.
+      responses:
+        '200':
+          description: Successfully retrieved campaigns list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignList'
+        '400':
+          $ref: '../maind.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../maind.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: '../maind.yaml#/components/responses/RateLimitExceeded'
+
+  /{campaign_id}:
+    get:
+      operationId: getCampaignById
+      summary: Get details of a specific campaign
+      description: |
+        Retrieves details for a given campaign ID.
+        If the system user token fails, the connector should fetch a page token first.
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: The campaign ID
+          schema:
+            type: string
+        - name: fields
+          in: query
+          required: true
+          description: The fields to retrieve
+          schema:
+            type: string
+            example: "id,name,status,objective"
+      responses:
+        '200':
+          description: Successfully retrieved campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          $ref: '../maind.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../maind.yaml#/components/responses/Unauthorized'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '../maind.yaml#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '../maind.yaml#/components/responses/RateLimitExceeded'
+
+components:
+  schemas:
+    PageToken:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "EAAGj...."
+
+    CampaignList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Campaign"
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "2384739287492837"
+        name:
+          type: string
+          example: "Black Friday Campaign"
+        status:
+          type: string
+          example: "ACTIVE"
+        objective:
+          type: string
+          example: "REACH"

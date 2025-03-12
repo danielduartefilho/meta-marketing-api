@@ -1,0 +1,43 @@
+# Environment variables
+.env
+.env.*
+
+# Authentication
+*.token
+tokens/
+access_tokens/
+
+# Logs
+*.log
+logs/
+log/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+vendor/
+dist/
+build/
+
+# Cache
+.cache/
+*.cache
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/

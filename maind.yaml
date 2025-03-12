@@ -1,0 +1,135 @@
+openapi: 3.1.0
+info:
+  title: Meta Marketing API Connector
+  description: |
+    API to access Meta v22.0 marketing campaigns and insights.
+    Rate Limits:
+    - Standard tier: 9000 points/300s (read=1pt, write=3pts)
+    - Development tier: 60 points/300s
+    Performance:
+    - Use date filters to reduce query size
+    - Request unique metrics separately
+    - Cache responses for 5 minutes
+  version: '1.4.0'
+  x-rate-limiting:
+    standard-tier:
+      points: 9000
+      window: 300
+      block: 60
+    development-tier:
+      points: 60
+      window: 300
+      block: 300
+  x-performance:
+    cache-ttl: 300
+    timeout:
+      sync: 30
+      async: 3600
+    compression: true
+    batch-size: 100
+
+servers:
+  - url: https://graph.facebook.com/v22.0
+    description: Meta Graph API v22.0
+
+security:
+  - BearerAuth: []
+
+paths: {}
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  headers:
+    BusinessUseCaseUsage:
+      description: Current API usage and limits
+      schema:
+        type: object
+        properties:
+          rate_limit_usage:
+            type: integer
+          points_remaining:
+            type: integer
+          reset_time:
+            type: string
+    
+    RateLimitReset:
+      description: Seconds until rate limit reset
+      schema:
+        type: integer
+    
+    RetryAfter:
+      description: Seconds to wait before retry
+      schema:
+        type: integer
+    
+    CacheControl:
+      description: Caching directives
+      schema:
+        type: string
+        example: "max-age=300"
+
+  responses:
+    BadRequest:
+      description: Invalid parameters, see error details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Unauthorized:
+      description: Token expired or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: [
+                INVALID_PARAMS,
+                TOKEN_ERROR,
+                RATE_LIMIT,
+                PARTIAL_DATA,
+                "17", # User request limit
+                "613", # Ad account limit
+                "4" # App limit
+              ]
+            subcode:
+              type: string
+              enum: [
+                "2446079", # User limit
+                "1487742", # Ad account limit
+                "1504022", # Insights limit
+                "1504039"  # Insights limit
+              ]
+            message:
+              type: string
+            retry_after:
+              type: integer
+              description: Seconds to wait before retry (rate limit only)
+            available_metrics:
+              type: array
+              items:
+                type: string
+              description: List of metrics still available

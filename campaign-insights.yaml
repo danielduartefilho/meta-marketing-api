@@ -1,0 +1,163 @@
+openapi: 3.1.0
+info:
+  title: Meta Marketing API - Campaign Insights
+  description: |
+    Campaign analysis endpoints for Meta Marketing API v22.0.
+    Provides access to campaign metrics, insights, and performance data.
+  version: '1.4.0'
+
+paths:
+  /act_906594379912215/insights:
+    get:
+      operationId: getCampaignInsights
+      summary: Get campaign insights with fallback support
+      description: |
+        Returns metrics with fallback strategy. Base metrics (imp, reach) always available. Extended metrics (video) when accessible. Use fields parameter to control metric sets.
+      parameters:
+        - name: date_preset
+          in: query
+          description: Time range for metrics retrieval. Defaults to last_7d if longer ranges fail
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, last_30d, this_month, last_month]
+            default: last_7d
+        - name: fields
+          in: query
+          description: Metrics to retrieve. Start with base metrics, add video metrics if needed. Example base metrics - impressions,reach,spend
+          required: true
+          schema:
+            type: string
+            example: "impressions,reach,spend,inline_post_engagement"
+        - name: level
+          in: query
+          description: Data aggregation level. Use ad for most granular data
+          schema:
+            type: string
+            enum: [ad, adset, campaign, account]
+            default: ad
+        - name: use_account_attribution_setting
+          in: query
+          description: Match Ads Manager attribution settings
+          schema:
+            type: boolean
+            default: true
+        - name: breakdowns
+          in: query
+          description: Single breakdown dimension. Will be ignored if data unavailable
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [publisher_platform, platform_position, age, gender, region]
+            example: ["platform_position"]
+            maxItems: 1
+        - name: filtering
+          in: query
+          description: Required for platform metrics. Removed if causing errors
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                field:
+                  type: string
+                  enum: [publisher_platform]
+                  example: "publisher_platform"
+                operator:
+                  type: string
+                  enum: [IN]
+                  example: "IN"
+                value:
+                  type: array
+                  items:
+                    type: string
+                  example: ["instagram"]
+            maxItems: 3
+      responses:
+        '200':
+          description: Successfully retrieved insights
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: '../maind.yaml#/components/headers/BusinessUseCaseUsage'
+            X-Rate-Limit-Reset:
+              $ref: '../maind.yaml#/components/headers/RateLimitReset'
+            Cache-Control:
+              $ref: '../maind.yaml#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsResponse'
+        '206':
+          description: Partial data available
+          headers:
+            Retry-After:
+              $ref: '../maind.yaml#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightsResponse'
+        '400':
+          $ref: '../maind.yaml#/components/responses/BadRequest'
+        '401':
+          $ref: '../maind.yaml#/components/responses/Unauthorized'
+        '429':
+          $ref: '../maind.yaml#/components/responses/RateLimitExceeded'
+
+components:
+  schemas:
+    InsightsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              impressions:
+                type: integer
+                example: 67527
+                description: Base metric, always available
+              reach:
+                type: integer
+                example: 36700
+                description: Base metric, always available
+              spend:
+                type: number
+                format: float
+                example: 1067.87
+                description: Base metric, always available
+              inline_post_engagement:
+                type: integer
+                example: 1039
+                description: Base metric, always available
+              video_p25_watched_actions:
+                type: integer
+                example: 11105
+                description: Extended metric, may be unavailable
+              video_p50_watched_actions:
+                type: integer
+                example: 6266
+                description: Extended metric, may be unavailable
+              video_p75_watched_actions:
+                type: integer
+                example: 4227
+                description: Extended metric, may be unavailable
+              video_p95_watched_actions:
+                type: integer
+                example: 3205
+                description: Extended metric, may be unavailable
+              video_avg_time_watched_actions:
+                type: number
+                format: float
+                example: 5.0
+                description: Extended metric, may be unavailable
+        partial_data:
+          type: boolean
+          description: True if some requested metrics were unavailable
+          example: false
+        available_metrics:
+          type: array
+          description: List of metrics successfully retrieved
+          items:
+            type: string
+          example: ["impressions", "reach", "spend", "inline_post_engagement"]

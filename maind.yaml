@@ -37,13 +37,13 @@ security:
 
 paths:
   /102264027940184:
-    $ref: 'https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/campaign-management.yaml#/paths/~1102264027940184'
+    $ref: "./paths/getPageAccessToken.yaml"
   /act_906594379912215/campaigns:
-    $ref: 'https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/campaign-management.yaml#/paths/~1act_906594379912215~1campaigns'
+    $ref: "./paths/getCampaigns.yaml"
   /{campaign_id}:
-    $ref: 'https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/campaign-management.yaml#/paths/~1{campaign_id}'
+    $ref: "./paths/getCampaignById.yaml"
   /act_906594379912215/insights:
-    $ref: 'https://raw.githubusercontent.com/danielduartefilho/meta-marketing-api/master/campaign-insights.yaml#/paths/~1act_906594379912215~1insights'
+    $ref: "./paths/getCampaignInsights.yaml"
 
 components:
   securitySchemes:
@@ -52,92 +52,10 @@ components:
       scheme: bearer
 
   headers:
-    BusinessUseCaseUsage:
-      description: Current API usage and limits
-      schema:
-        type: object
-        properties:
-          rate_limit_usage:
-            type: integer
-          points_remaining:
-            type: integer
-          reset_time:
-            type: string
-    
-    RateLimitReset:
-      description: Seconds until rate limit reset
-      schema:
-        type: integer
-    
-    RetryAfter:
-      description: Seconds to wait before retry
-      schema:
-        type: integer
-    
-    CacheControl:
-      description: Caching directives
-      schema:
-        type: string
-        example: "max-age=300"
+    $ref: "./components/headers.yaml"
 
   responses:
-    BadRequest:
-      description: Invalid parameters, see error details
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    
-    Unauthorized:
-      description: Token expired or invalid
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    
-    RateLimitExceeded:
-      description: Rate limit exceeded
-      headers:
-        Retry-After:
-          $ref: '#/components/headers/RetryAfter'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+    $ref: "./components/responses.yaml"
 
   schemas:
-    ErrorResponse:
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            code:
-              type: string
-              enum: [
-                INVALID_PARAMS,
-                TOKEN_ERROR,
-                RATE_LIMIT,
-                PARTIAL_DATA,
-                "17", # User request limit
-                "613", # Ad account limit
-                "4" # App limit
-              ]
-            subcode:
-              type: string
-              enum: [
-                "2446079", # User limit
-                "1487742", # Ad account limit
-                "1504022", # Insights limit
-                "1504039"  # Insights limit
-              ]
-            message:
-              type: string
-            retry_after:
-              type: integer
-              description: Seconds to wait before retry (rate limit only)
-            available_metrics:
-              type: array
-              items:
-                type: string
-              description: List of metrics still available
+    $ref: "./components/schemas.yaml"

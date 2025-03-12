@@ -1,0 +1,26 @@
+get:
+  operationId: getCampaigns
+  summary: Get all campaigns for an ad account
+  description: |
+    Returns all active campaigns for the specified ad account (ID: act_906594379912215).
+    If the system user token fails, the connector should fetch a page token first and retry.
+  responses:
+    '200':
+      description: Successfully retrieved campaigns list
+      headers:
+        X-Business-Use-Case-Usage:
+          $ref: "../components/headers.yaml#/BusinessUseCaseUsage"
+        X-Rate-Limit-Reset:
+          $ref: "../components/headers.yaml#/RateLimitReset"
+        Cache-Control:
+          $ref: "../components/headers.yaml#/CacheControl"
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/CampaignList"
+    '400':
+      $ref: "../components/responses.yaml#/BadRequest"
+    '401':
+      $ref: "../components/responses.yaml#/Unauthorized"
+    '429':
+      $ref: "../components/responses.yaml#/RateLimitExceeded"

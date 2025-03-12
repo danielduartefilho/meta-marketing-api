@@ -1,0 +1,23 @@
+BadRequest:
+  description: Invalid parameters, see error details
+  content:
+    application/json:
+      schema:
+        $ref: "./schemas.yaml#/ErrorResponse"
+
+Unauthorized:
+  description: Token expired or invalid
+  content:
+    application/json:
+      schema:
+        $ref: "./schemas.yaml#/ErrorResponse"
+
+RateLimitExceeded:
+  description: Rate limit exceeded
+  headers:
+    Retry-After:
+      $ref: "./headers.yaml#/RetryAfter"
+  content:
+    application/json:
+      schema:
+        $ref: "./schemas.yaml#/ErrorResponse"

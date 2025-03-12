@@ -1,0 +1,27 @@
+get:
+  operationId: getPageAccessToken
+  summary: Get Facebook Page Access Token
+  description: |
+    Retrieves a page access token for the Wiemspro Brasil page (ID: 102264027940184).
+    If the system user token is used and the request fails due to missing permissions, 
+    this endpoint must be called first to get a valid page token.
+  parameters:
+    - name: fields
+      in: query
+      required: true
+      schema:
+        type: string
+        example: "access_token"
+  responses:
+    '200':
+      description: Successfully retrieved page access token
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/PageToken"
+    '400':
+      $ref: "../components/responses.yaml#/BadRequest"
+    '401':
+      $ref: "../components/responses.yaml#/Unauthorized"
+    '429':
+      $ref: "../components/responses.yaml#/RateLimitExceeded"

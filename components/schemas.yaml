@@ -1,0 +1,123 @@
+CampaignList:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: "#/Campaign"
+
+Campaign:
+  type: object
+  properties:
+    id:
+      type: string
+      example: "2384739287492837"
+    name:
+      type: string
+      example: "Black Friday Campaign"
+    status:
+      type: string
+      example: "ACTIVE"
+    objective:
+      type: string
+      example: "REACH"
+
+InsightsResponse:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        type: object
+        properties:
+          impressions:
+            type: integer
+            example: 67527
+            description: Base metric, always available
+          reach:
+            type: integer
+            example: 36700
+            description: Base metric, always available
+          spend:
+            type: number
+            format: float
+            example: 1067.87
+            description: Base metric, always available
+          inline_post_engagement:
+            type: integer
+            example: 1039
+            description: Base metric, always available
+          video_p25_watched_actions:
+            type: integer
+            example: 11105
+            description: Extended metric, may be unavailable
+          video_p50_watched_actions:
+            type: integer
+            example: 6266
+            description: Extended metric, may be unavailable
+          video_p75_watched_actions:
+            type: integer
+            example: 4227
+            description: Extended metric, may be unavailable
+          video_p95_watched_actions:
+            type: integer
+            example: 3205
+            description: Extended metric, may be unavailable
+          video_avg_time_watched_actions:
+            type: number
+            format: float
+            example: 5.0
+            description: Extended metric, may be unavailable
+    partial_data:
+      type: boolean
+      description: True if some requested metrics were unavailable
+      example: false
+    available_metrics:
+      type: array
+      description: List of metrics successfully retrieved
+      items:
+        type: string
+      example: ["impressions", "reach", "spend", "inline_post_engagement"]
+
+PageToken:
+  type: object
+  properties:
+    access_token:
+      type: string
+      example: "EAAGj...."
+
+ErrorResponse:
+  type: object
+  properties:
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [
+            INVALID_PARAMS,
+            TOKEN_ERROR,
+            RATE_LIMIT,
+            PARTIAL_DATA,
+            "17", # User request limit
+            "613", # Ad account limit
+            "4" # App limit
+          ]
+        subcode:
+          type: string
+          enum: [
+            "2446079", # User limit
+            "1487742", # Ad account limit
+            "1504022", # Insights limit
+            "1504039"  # Insights limit
+          ]
+        message:
+          type: string
+        retry_after:
+          type: integer
+          description: Seconds to wait before retry (rate limit only)
+        available_metrics:
+          type: array
+          items:
+            type: string
+          description: List of metrics still available

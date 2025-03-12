@@ -1,0 +1,95 @@
+get:
+  operationId: getCampaignInsights
+  summary: Get campaign insights with fallback support
+  description: |
+    Returns metrics with fallback strategy. Base metrics (imp, reach) always available. 
+    Extended metrics (video) when accessible. Use fields parameter to control metric sets.
+  parameters:
+    - name: date_preset
+      in: query
+      description: Time range for metrics retrieval. Defaults to last_7d if longer ranges fail
+      schema:
+        type: string
+        enum: [today, yesterday, last_3d, last_7d, last_30d, this_month, last_month]
+        default: last_7d
+    - name: fields
+      in: query
+      description: Metrics to retrieve. Start with base metrics, add video metrics if needed
+      required: true
+      schema:
+        type: string
+        example: "impressions,reach,spend,inline_post_engagement"
+    - name: level
+      in: query
+      description: Data aggregation level. Use ad for most granular data
+      schema:
+        type: string
+        enum: [ad, adset, campaign, account]
+        default: ad
+    - name: use_account_attribution_setting
+      in: query
+      description: Match Ads Manager attribution settings
+      schema:
+        type: boolean
+        default: true
+    - name: breakdowns
+      in: query
+      description: Single breakdown dimension. Will be ignored if data unavailable
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [publisher_platform, platform_position, age, gender, region]
+        example: ["platform_position"]
+        maxItems: 1
+    - name: filtering
+      in: query
+      description: Required for platform metrics. Removed if causing errors
+      schema:
+        type: array
+        items:
+          type: object
+          properties:
+            field:
+              type: string
+              enum: [publisher_platform]
+              example: "publisher_platform"
+            operator:
+              type: string
+              enum: [IN]
+              example: "IN"
+            value:
+              type: array
+              items:
+                type: string
+              example: ["instagram"]
+        maxItems: 3
+  responses:
+    '200':
+      description: Successfully retrieved insights
+      headers:
+        X-Business-Use-Case-Usage:
+          $ref: "../components/headers.yaml#/BusinessUseCaseUsage"
+        X-Rate-Limit-Reset:
+          $ref: "../components/headers.yaml#/RateLimitReset"
+        Cache-Control:
+          $ref: "../components/headers.yaml#/CacheControl"
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/InsightsResponse"
+    '206':
+      description: Partial data available
+      headers:
+        Retry-After:
+          $ref: "../components/headers.yaml#/RetryAfter"
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/InsightsResponse"
+    '400':
+      $ref: "../components/responses.yaml#/BadRequest"
+    '401':
+      $ref: "../components/responses.yaml#/Unauthorized"
+    '429':
+      $ref: "../components/responses.yaml#/RateLimitExceeded"

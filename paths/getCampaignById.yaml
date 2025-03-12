@@ -1,0 +1,38 @@
+get:
+  operationId: getCampaignById
+  summary: Get details of a specific campaign
+  description: |
+    Retrieves details for a given campaign ID.
+    If system user token fails, fetch a page token first.
+  parameters:
+    - name: campaign_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: fields
+      in: query
+      required: true
+      schema:
+        type: string
+        example: "id,name,status,objective"
+  responses:
+    '200':
+      description: Successfully retrieved campaign details
+      headers:
+        X-Business-Use-Case-Usage:
+          $ref: "../components/headers.yaml#/BusinessUseCaseUsage"
+        X-Rate-Limit-Reset:
+          $ref: "../components/headers.yaml#/RateLimitReset"
+        Cache-Control:
+          $ref: "../components/headers.yaml#/CacheControl"
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas.yaml#/Campaign"
+    '400':
+      $ref: "../components/responses.yaml#/BadRequest"
+    '401':
+      $ref: "../components/responses.yaml#/Unauthorized"
+    '429':
+      $ref: "../components/responses.yaml#/RateLimitExceeded"

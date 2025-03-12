@@ -5,12 +5,6 @@ info:
     Meta Marketing API for campaign management and insights.
     Rate limits and best practices are enforced.
 
-    # Internal Configuration
-    The connector uses these pre-configured values:
-    - Page ID: 102264027940184
-    - Ad Account ID: 906594379912215 (without act_ prefix)
-    - Campaign ID: 23847392874
-
     # Authentication Flow
     1. User Bearer Token (stored in connector):
        - Required permissions:
@@ -28,6 +22,12 @@ info:
        - Calls /me/accounts internally
        - Caches page token for 1 hour
        - Auto-refresh on expiration
+
+    3. Error Handling:
+       - Automatic retry on token errors
+       - Permission verification
+       - Rate limit backoff
+       - Detailed error messages
   version: '22.0'
   x-connector-config:
     page-id: "102264027940184"
@@ -82,6 +82,8 @@ paths:
         Called automatically on error 190.
       tags:
         - Authentication
+      security:
+        - bearerAuth: []
       parameters:
         - name: grant_type
           in: query
@@ -131,6 +133,8 @@ paths:
                 expires_in: 5184000
         '400':
           $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
 
   /102264027940184:
     get:
@@ -177,18 +181,13 @@ paths:
       operationId: getPageAccounts
       summary: Get page accounts
       description: |
-        Backup endpoint to discover page access tokens.
-        Used if pre-configured page token fails.
-        Requires pages_manage_ads permission.
+        Internal endpoint to generate page access token.
+        Required permissions: pages_manage_ads
       tags:
         - Authentication
+      security:
+        - bearerAuth: []
       parameters:
-        - name: access_token
-          in: query
-          required: true
-          description: User access token with pages_manage_ads permission
-          schema:
-            type: string
         - name: fields
           in: query
           required: true
@@ -227,18 +226,13 @@ paths:
       operationId: getAdAccounts
       summary: List ad accounts
       description: |
-        Backup endpoint to discover ad account IDs.
-        Used if pre-configured account ID fails.
-        Requires ads_management permission.
+        Discover available ad accounts.
+        Required permissions: ads_management
       tags:
         - Authentication
+      security:
+        - bearerAuth: []
       parameters:
-        - name: access_token
-          in: query
-          required: true
-          description: Page access token with ads_management permission
-          schema:
-            type: string
         - name: fields
           in: query
           required: true
@@ -278,10 +272,11 @@ paths:
       summary: List campaigns
       description: |
         Get a list of all campaigns for the specified ad account.
-        Uses pre-configured account_id (906594379912215).
-        Requires pages_manage_ads and ads_management permissions.
+        Required permissions: pages_manage_ads, ads_management
       tags:
         - Campaigns
+      security:
+        - bearerAuth: []
       parameters:
         - name: account_id
           in: path
@@ -291,12 +286,6 @@ paths:
             type: string
             pattern: '^\d+$'
             example: "906594379912215"
-        - name: access_token
-          in: query
-          required: true
-          description: Page access token (generated automatically)
-          schema:
-            type: string
         - name: fields
           in: query
           required: true
@@ -320,6 +309,13 @@ paths:
       responses:
         '200':
           description: Success. Returns a list of campaigns
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
           content:
             application/json:
               schema:
@@ -330,6 +326,12 @@ paths:
                     name: "Website Traffic Campaign"
                     status: "ACTIVE"
                     objective: "LINK_CLICKS"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/campaigns/{campaign_id}:
     get:
@@ -337,10 +339,11 @@ paths:
       summary: Get campaign details
       description: |
         Get detailed information about a specific campaign.
-        Uses pre-configured account_id (906594379912215).
-        Requires pages_manage_ads and ads_management permissions.
+        Required permissions: pages_manage_ads, ads_management
       tags:
         - Campaigns
+      security:
+        - bearerAuth: []
       parameters:
         - name: account_id
           in: path
@@ -357,12 +360,6 @@ paths:
           schema:
             type: string
             example: "23847392874"
-        - name: access_token
-          in: query
-          required: true
-          description: Page access token (generated automatically)
-          schema:
-            type: string
         - name: fields
           in: query
           required: true
@@ -382,6 +379,10 @@ paths:
                 name: "Website Traffic Campaign"
                 status: "ACTIVE"
                 objective: "LINK_CLICKS"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
 
   /act_{account_id}/campaigns/{campaign_id}/insights:
     get:
@@ -389,10 +390,11 @@ paths:
       summary: Get campaign insights
       description: |
         Get performance metrics for a specific campaign.
-        Uses pre-configured account_id (906594379912215).
-        Requires pages_read_engagement and ads_read permissions.
+        Required permissions: pages_read_engagement, ads_read
       tags:
         - Insights
+      security:
+        - bearerAuth: []
       parameters:
         - name: account_id
           in: path
@@ -409,12 +411,6 @@ paths:
           schema:
             type: string
             example: "23847392874"
-        - name: access_token
-          in: query
-          required: true
-          description: Page access token (generated automatically)
-          schema:
-            type: string
         - name: fields
           in: query
           required: true

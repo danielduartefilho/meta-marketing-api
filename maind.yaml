@@ -18,11 +18,16 @@ info:
          * pages_read_engagement (for metrics)
          * ads_management (for campaign access)
          * ads_read (for insights)
+       - Token Refresh:
+         * On error 190 (expired token)
+         * On error 200 (permission error)
+         * On error 10 (app configuration)
 
     2. Page Token Generation:
        - Uses stored bearer token
        - Calls /me/accounts internally
        - Caches page token for 1 hour
+       - Auto-refresh on expiration
   version: '22.0'
   x-connector-config:
     page-id: "102264027940184"
@@ -33,6 +38,16 @@ info:
       - pages_read_engagement
       - ads_management
       - ads_read
+    error-retry:
+      max-attempts: 3
+      backoff-ms: 1000
+      errors:
+        - code: 190
+          action: refresh_token
+        - code: 200
+          action: verify_permissions
+        - code: 10
+          action: verify_app_config
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -58,6 +73,65 @@ security:
   - bearerAuth: []
 
 paths:
+  /oauth/access_token:
+    get:
+      operationId: refreshAccessToken
+      summary: Refresh access token
+      description: |
+        Refresh expired access token using stored refresh token.
+        Called automatically on error 190.
+      tags:
+        - Authentication
+      parameters:
+        - name: grant_type
+          in: query
+          required: true
+          description: Must be 'fb_exchange_token'
+          schema:
+            type: string
+            enum: [fb_exchange_token]
+        - name: client_id
+          in: query
+          required: true
+          description: App ID from Meta Developer Console
+          schema:
+            type: string
+        - name: client_secret
+          in: query
+          required: true
+          description: App Secret from Meta Developer Console
+          schema:
+            type: string
+        - name: fb_exchange_token
+          in: query
+          required: true
+          description: Expired access token to refresh
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success. Returns new access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: New access token
+                  token_type:
+                    type: string
+                    enum: [bearer]
+                  expires_in:
+                    type: integer
+                    description: Token lifetime in seconds
+              example:
+                access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
+                token_type: "bearer"
+                expires_in: 5184000
+        '400':
+          $ref: "#/components/responses/BadRequest"
+
   /102264027940184:
     get:
       operationId: getPageAccessToken
@@ -428,23 +502,96 @@ components:
 
   responses:
     BadRequest:
-      description: Invalid request parameters
+      description: Bad Request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  type:
+                    type: string
+                    description: Error type
+                  code:
+                    type: integer
+                    description: Error code
+                  fbtrace_id:
+                    type: string
+                    description: Facebook trace ID
+            example:
+              error:
+                message: "Invalid OAuth access token."
+                type: "OAuthException"
+                code: 190
+                fbtrace_id: "AbCdEf123456"
+
     Unauthorized:
-      description: Invalid or missing access token
+      description: Unauthorized
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  type:
+                    type: string
+                    description: Error type
+                  code:
+                    type: integer
+                    description: Error code
+                  fbtrace_id:
+                    type: string
+                    description: Facebook trace ID
+            example:
+              error:
+                message: "Error validating access token"
+                type: "OAuthException"
+                code: 190
+                fbtrace_id: "AbCdEf123456"
+
     RateLimitExceeded:
       description: Rate limit exceeded
+      headers:
+        X-Business-Use-Case-Usage:
+          $ref: "#/components/headers/BusinessUseCaseUsage"
+        X-Rate-Limit-Reset:
+          $ref: "#/components/headers/RateLimitReset"
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  type:
+                    type: string
+                    description: Error type
+                  code:
+                    type: integer
+                    description: Error code
+                  fbtrace_id:
+                    type: string
+                    description: Facebook trace ID
+            example:
+              error:
+                message: "Application request limit reached"
+                type: "OAuthException"
+                code: 4
+                fbtrace_id: "AbCdEf123456"
 
   schemas:
     Error:

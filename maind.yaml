@@ -10,7 +10,7 @@ info:
        - Stored in connector configuration
        - Required permissions:
          * pages_show_list (for page discovery)
-         * pages_read_engagement (for metrics)
+         * pages_read_engagement (for metrics and insights)
          * ads_management (for campaign access)
          * ads_read (for insights)
          * business_management (for account access)
@@ -25,16 +25,28 @@ info:
        a. Page Access:
           - Call /me/accounts with pages_show_list
           - Select page with ID 102264027940184
-          - Use pages_read_engagement for metrics
-          - Use read_insights for detailed data
+          - Use pages_read_engagement for:
+            * Page metrics
+            * Post insights
+            * Engagement data
+          - Use read_insights for:
+            * Detailed analytics
+            * Custom metrics
+            * Historical data
           - Cache page details for 24 hours
 
        b. Ad Account:
           - Call /me/businesses with business_management
           - Get ad accounts via /business/{id}/owned_ad_accounts
           - Select account with ID 906594379912215
-          - Use ads_management for campaign access
-          - Use attribution_read for conversion data
+          - Use ads_management for:
+            * Campaign access
+            * Ad set management
+            * Creative control
+          - Use attribution_read for:
+            * Conversion data
+            * Attribution windows
+            * Custom events
           - Cache account details and status
 
     3. Error Handling:
@@ -76,6 +88,8 @@ info:
           - category
           - tasks
           - engagement
+          - posts
+          - insights
       account-info:
         duration: 86400     # 24 hours
         refresh-before: 3600 # 1 hour before
@@ -85,6 +99,8 @@ info:
           - status
           - currency
           - timezone
+          - insights
+          - campaigns
       business-info:
         duration: 604800    # 7 days
         refresh-before: 86400 # 1 day before
@@ -92,6 +108,8 @@ info:
           - id
           - name
           - verification_status
+          - owned_pages
+          - client_ad_accounts
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -122,7 +140,7 @@ paths:
       operationId: getPageAccounts
       summary: Get page accounts
       description: |
-        List available pages.
+        List available pages with engagement metrics.
         Called internally to get page ID 102264027940184.
         Required permissions: pages_show_list, pages_read_engagement
       tags:
@@ -136,10 +154,10 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "id,name,category,category_list,tasks,engagement{count_lifetime}"
+            default: "id,name,category,category_list,tasks,engagement{count_lifetime},posts.limit(1){insights},feed{likes,comments}"
       responses:
         '200':
-          description: Success. Returns page list
+          description: Success. Returns page list with metrics
           headers:
             X-Business-Use-Case-Usage:
               $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -166,11 +184,35 @@ paths:
                     ]
                     tasks: [
                       "CREATE_CONTENT",
-                      "MODERATE_CONTENT",
+                      "MODERATE",
                       "READ_INSIGHTS"
                     ]
                     engagement: {
                       "count_lifetime": 1234
+                    }
+                    posts: {
+                      "data": [
+                        {
+                          "id": "102264027940184_123456789",
+                          "insights": {
+                            "data": [
+                              {
+                                "name": "post_impressions",
+                                "period": "lifetime",
+                                "values": [{"value": 5678}]
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                    feed: {
+                      "data": [
+                        {
+                          "likes": {"summary": {"total_count": 42}},
+                          "comments": {"summary": {"total_count": 7}}
+                        }
+                      ]
                     }
         '400':
           $ref: "#/components/responses/BadRequest"
@@ -363,7 +405,7 @@ paths:
       summary: List campaigns
       description: |
         Get a list of all campaigns for the specified ad account.
-        Required permissions: pages_manage_ads, ads_management
+        Required permissions: ads_management
       tags:
         - Campaigns
       security:
@@ -430,7 +472,7 @@ paths:
       summary: Get campaign details
       description: |
         Get detailed information about a specific campaign.
-        Required permissions: pages_manage_ads, ads_management
+        Required permissions: ads_management
       tags:
         - Campaigns
       security:
@@ -481,7 +523,7 @@ paths:
       summary: Get campaign insights
       description: |
         Get performance metrics for a specific campaign.
-        Required permissions: pages_read_engagement, ads_read
+        Required permissions: ads_read
       tags:
         - Insights
       security:
@@ -569,7 +611,7 @@ components:
         User access token stored in connector.
         Required permissions:
         - pages_show_list (for page discovery)
-        - pages_read_engagement (for metrics)
+        - pages_read_engagement (for metrics and insights)
         - ads_management (for campaign access)
         - ads_read (for insights)
         - business_management (for account access)

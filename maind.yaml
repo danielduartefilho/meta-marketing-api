@@ -30,53 +30,7 @@ security:
   - bearerAuth: []
 
 paths:
-  /102264027940184:
-    get:
-      operationId: getPageAccessToken
-      summary: Get page access token
-      description: Retrieve a page access token for the specified page ID
-      tags:
-        - Authentication
-      parameters:
-        - name: access_token
-          in: query
-          required: true
-          description: User access token with manage_pages permission
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns a long-lived page access token
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PageToken"
-              example:
-                access_token: "EAAJKpXyZB8i0BADHkZAkHrZBTZAZAQZDZD"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
   /act_{account_id}/campaigns:
-    parameters:
-      - name: account_id
-        in: path
-        required: true
-        description: Ad account ID (act_906594379912215)
-        schema:
-          type: string
-          pattern: '^act_\d+$'
-          example: "act_906594379912215"
     get:
       operationId: getCampaigns
       summary: List campaigns
@@ -84,6 +38,14 @@ paths:
       tags:
         - Campaigns
       parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (act_906594379912215)
+          schema:
+            type: string
+            pattern: '^act_\d+$'
+            example: "act_906594379912215"
         - name: access_token
           in: query
           required: true
@@ -142,22 +104,6 @@ paths:
           $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/campaigns/{campaign_id}:
-    parameters:
-      - name: account_id
-        in: path
-        required: true
-        description: Ad account ID (act_906594379912215)
-        schema:
-          type: string
-          pattern: '^act_\d+$'
-          example: "act_906594379912215"
-      - name: campaign_id
-        in: path
-        required: true
-        description: Campaign ID to retrieve details for
-        schema:
-          type: string
-          example: "23847392874"
     get:
       operationId: getCampaignById
       summary: Get campaign details
@@ -165,6 +111,21 @@ paths:
       tags:
         - Campaigns
       parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (act_906594379912215)
+          schema:
+            type: string
+            pattern: '^act_\d+$'
+            example: "act_906594379912215"
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID to retrieve details for
+          schema:
+            type: string
+            example: "23847392874"
         - name: access_token
           in: query
           required: true
@@ -205,22 +166,6 @@ paths:
           $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/campaigns/{campaign_id}/insights:
-    parameters:
-      - name: account_id
-        in: path
-        required: true
-        description: Ad account ID (act_906594379912215)
-        schema:
-          type: string
-          pattern: '^act_\d+$'
-          example: "act_906594379912215"
-      - name: campaign_id
-        in: path
-        required: true
-        description: Campaign ID to retrieve insights for
-        schema:
-          type: string
-          example: "23847392874"
     get:
       operationId: getCampaignInsights
       summary: Get campaign insights
@@ -228,6 +173,21 @@ paths:
       tags:
         - Insights
       parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (act_906594379912215)
+          schema:
+            type: string
+            pattern: '^act_\d+$'
+            example: "act_906594379912215"
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID to retrieve insights for
+          schema:
+            type: string
+            example: "23847392874"
         - name: access_token
           in: query
           required: true

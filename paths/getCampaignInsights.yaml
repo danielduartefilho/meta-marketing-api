@@ -1,5 +1,16 @@
-summary: Get campaign insights
-description: Get performance metrics for a specific campaign
+summary: Get campaign insights and performance metrics
+description: |
+  Get detailed performance metrics and insights for a specific campaign.
+  
+  Métricas Disponíveis:
+  - Básicas: impressions, reach, spend, clicks, ctr, cpc
+  - Vídeo: retenção (p25-p100), tempo médio, plays
+  - Performance: conversões, ROAS
+  
+  Melhores Práticas:
+  - Limite de 30 dias para análise
+  - Máximo 2-3 breakdowns
+  - Priorizar filtros por ID
 operationId: getCampaignInsights
 tags:
   - Insights
@@ -8,19 +19,17 @@ parameters:
     name: account_id
     in: path
     required: true
-    description: Ad account ID (act_906594379912215)
+    description: Ad account ID
     schema:
       type: string
       pattern: '^act_\d+$'
-      example: "act_906594379912215"
   campaign_id:
     name: campaign_id
     in: path
     required: true
-    description: Campaign ID to retrieve insights for
+    description: Campaign ID
     schema:
       type: string
-      example: "23847392874"
   access_token:
     name: access_token
     in: header
@@ -32,35 +41,70 @@ parameters:
     name: fields
     in: query
     required: true
-    description: List of metrics to return
+    description: |
+      Métricas disponíveis:
+      - Básicas: impressions, reach, spend, clicks, ctr, cpc
+      - Vídeo (Retenção): p25_watched, p50_watched, p75_watched, p95_watched, p100_watched
+      - Vídeo (Engajamento): avg_time_watched, play_actions, views_2s, views_30s
+      - Performance: conversions, cost_per_conversion, roas
     schema:
       type: array
       items:
         type: string
         enum:
+          # Métricas Básicas
           - impressions
           - reach
           - spend
-          - inline_post_engagement
-          - video_p25_watched_actions
-          - video_p50_watched_actions
-          - video_p75_watched_actions
-          - video_p95_watched_actions
-          - video_avg_time_watched_actions
+          - clicks
+          - ctr
+          - cpc
+          # Métricas de Vídeo - Retenção
+          - p25_watched
+          - p50_watched
+          - p75_watched
+          - p95_watched
+          - p100_watched
+          # Métricas de Vídeo - Engajamento
+          - avg_time_watched
+          - play_actions
+          - views_2s
+          - views_30s
+          # Métricas de Performance
+          - conversions
+          - cost_per_conversion
+          - roas
+      default: ["impressions", "reach", "spend"]
   date_preset:
     name: date_preset
     in: query
-    description: Predefined date range for the report
+    description: Limite de 30 dias conforme recomendação
     schema:
       type: string
       enum:
         - today
         - yesterday
-        - this_month
-        - last_month
-        - this_quarter
-        - lifetime
-      default: "last_month"
+        - last_7d
+        - last_30d
+      default: "last_30d"
+  breakdowns:
+    name: breakdowns
+    in: query
+    description: |
+      Breakdowns Suportados (máximo 2-3):
+      - publisher_platform: facebook, instagram
+      - device_platform: desktop, mobile
+      - age, gender: Demografia
+    schema:
+      type: array
+      items:
+        type: string
+        enum:
+          - publisher_platform
+          - device_platform
+          - age
+          - gender
+      maxItems: 3
   time_increment:
     name: time_increment
     in: query
@@ -90,12 +134,21 @@ responses:
               impressions: 1234
               reach: 987
               spend: 50.25
-              inline_post_engagement: 45
-              video_p25_watched_actions: 800
-              video_p50_watched_actions: 600
-              video_p75_watched_actions: 400
-              video_p95_watched_actions: 200
-              video_avg_time_watched_actions: 15.5
+              clicks: 45
+              ctr: 0.05
+              cpc: 1.12
+              p25_watched: 800
+              p50_watched: 600
+              p75_watched: 400
+              p95_watched: 200
+              p100_watched: 100
+              avg_time_watched: 15.5
+              play_actions: 200
+              views_2s: 150
+              views_30s: 100
+              conversions: 50
+              cost_per_conversion: 2.50
+              roas: 1.20
   '400':
     $ref: "#/components/responses/BadRequest"
   '401':

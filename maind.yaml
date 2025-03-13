@@ -149,6 +149,55 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /{campaign_id}:
+    get:
+      operationId: getCampaignById
+      summary: Get campaign details
+      description: |
+        Get detailed information about a specific campaign.
+        Required permissions: ads_management
+      tags:
+        - Campaigns
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID (get this from /campaigns endpoint)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "120218493633420149"
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: "id,name,status,objective,daily_budget,lifetime_budget,bid_strategy"
+      responses:
+        '200':
+          description: Success. Returns detailed campaign information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+              example:
+                id: "120218493633420149"
+                name: "Website Traffic Campaign"
+                status: "ACTIVE"
+                objective: "LINK_CLICKS"
+                daily_budget: 5000
+                lifetime_budget: 50000
+                bid_strategy: "LOWEST_COST_WITH_BID_CAP"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /act_{account_id}/campaigns:
     get:
       operationId: getCampaigns
@@ -210,64 +259,6 @@ paths:
                     name: "Website Traffic Campaign"
                     status: "ACTIVE"
                     objective: "LINK_CLICKS"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/campaigns/{campaign_id}:
-    get:
-      operationId: getCampaignById
-      summary: Get campaign details
-      description: |
-        Get detailed information about a specific campaign.
-        Required permissions: ads_management
-        Note: Use the numeric ID from /me/adaccounts (without act_ prefix)
-      tags:
-        - Campaigns
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID (get this from /campaigns endpoint)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "120218493633420149"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,status,objective,daily_budget,lifetime_budget,bid_strategy"
-      responses:
-        '200':
-          description: Success. Returns detailed campaign information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Campaign"
-              example:
-                id: "120218493633420149"
-                name: "Website Traffic Campaign"
-                status: "ACTIVE"
-                objective: "LINK_CLICKS"
-                daily_budget: 5000
-                lifetime_budget: 50000
-                bid_strategy: "LOWEST_COST_WITH_BID_CAP"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':

@@ -1,817 +1,372 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
-  title: Meta Marketing API
-  version: '22.0'
+  title: Meta Marketing API Connector
+  version: '1.0'
   description: |
-    API para gerenciamento de campanhas e anúncios no Meta Marketing.
+    Conector para acessar métricas e insights do Meta Marketing API.
     
-    Permissões necessárias:
-    - ads_management: Gerenciamento de anúncios e campanhas
-    - ads_read: Leitura de métricas e insights
-    - pages_show_list: Listagem de páginas gerenciadas
-    - pages_read_engagement: Acesso a dados de engajamento
+    Endpoints Validados:
+    - /insights: Métricas básicas e de vídeo
+    - /ads/{ad_id}/creative: Análise de criativos
+    - /audiences/insights: Análise de público
     
-    Autenticação:
-    1. Obtenha um token de acesso com as permissões necessárias
-    2. Use o token no header Authorization: Bearer {token}
-    3. Para operações em páginas, use pages_show_list e pages_read_engagement
+    Métricas Funcionais:
+    - Básicas: impressions, reach, spend, clicks, ctr, cpc
+    - Vídeo: video_p25/50/75/95/100_watched_actions
+    - Engajamento: video_avg_time_watched_actions, video_play_actions
+    
+    Sistema de Análise:
+    - Retenção por pontos (25%, 50%, 75%, 95%, 100%)
+    - Tempo médio de visualização
+    - Análise por plataforma
 
 servers:
   - url: https://graph.facebook.com/v22.0
     description: Meta Graph API v22.0
 
 paths:
-  /me/adaccounts:
-    get:
-      operationId: getAdAccounts
-      summary: List ad accounts
-      description: |
-        Get a list of ad accounts that the user has access to.
-        Required permissions: ads_management
-      tags:
-        - Accounts
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,account_status"
-      responses:
-        '200':
-          description: Success. Returns a list of ad accounts
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          description: Ad account ID with act_ prefix
-                          example: "act_906594379912215"
-                        name:
-                          type: string
-                          description: Ad account name
-                          example: "My Ad Account"
-                        account_status:
-                          type: integer
-                          description: Account status (1 = active, 2 = disabled)
-                          example: 1
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /me/accounts:
-    get:
-      operationId: getAccounts
-      summary: Get managed pages
-      description: |
-        Get list of pages that the user manages.
-        Required permissions: pages_show_list, pages_read_engagement
-      tags:
-        - Pages
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Success. Returns list of managed pages
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          description: Page ID
-                          example: "123456789"
-                        name:
-                          type: string
-                          description: Page name
-                          example: "My Business Page"
-                        access_token:
-                          type: string
-                          description: Page access token (only with pages_read_engagement)
-                        category:
-                          type: string
-                          description: Page category
-                          example: "Local Business"
-                        tasks:
-                          type: array
-                          description: Available tasks based on permissions
-                          items:
-                            type: string
-                            enum: [ANALYZE, CREATE_CONTENT, MODERATE, ADVERTISE]
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/campaigns:
-    get:
-      operationId: getCampaigns
-      summary: List campaigns
-      description: |
-        Get a list of all campaigns for the specified ad account.
-        Required permissions: ads_management
-        Note: Use the numeric ID from /me/adaccounts (without act_ prefix)
-      tags:
-        - Campaigns
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,status,objective"
-        - name: limit
-          in: query
-          description: Number of records to return per request
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 25
-        - name: after
-          in: query
-          description: Cursor for pagination
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns a list of campaigns
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CampaignList"
-              example:
-                data:
-                  - id: "120218493633420149"
-                    name: "Website Traffic Campaign"
-                    status: "ACTIVE"
-                    objective: "LINK_CLICKS"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /{campaign_id}:
-    get:
-      operationId: getCampaignById
-      summary: Get campaign details
-      description: |
-        Get detailed information about a specific campaign.
-        Required permissions: ads_management
-      tags:
-        - Campaigns
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID (get this from /campaigns endpoint)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "120218493633420149"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,status,objective,daily_budget,lifetime_budget,bid_strategy"
-      responses:
-        '200':
-          description: Success. Returns detailed campaign information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Campaign"
-              example:
-                id: "120218493633420149"
-                name: "Website Traffic Campaign"
-                status: "ACTIVE"
-                objective: "LINK_CLICKS"
-                daily_budget: 5000
-                lifetime_budget: 50000
-                bid_strategy: "LOWEST_COST_WITH_BID_CAP"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/adsets:
-    get:
-      operationId: getAdSets
-      summary: List ad sets
-      description: |
-        Get a list of all ad sets in the specified ad account.
-        Required permissions: ads_management
-      tags:
-        - Ad Sets
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,status,campaign_id,daily_budget,lifetime_budget"
-        - name: limit
-          in: query
-          description: Number of records to return per request
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 25
-        - name: after
-          in: query
-          description: Cursor for pagination
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns a list of ad sets
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdSetList"
-              example:
-                data:
-                  - id: "23850123640320149"
-                    name: "Website Traffic - Desktop"
-                    status: "ACTIVE"
-                    campaign_id: "120218493633420149"
-                    daily_budget: 5000
-                    lifetime_budget: 50000
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /{adset_id}:
-    get:
-      operationId: getAdSetById
-      summary: Get ad set details
-      description: |
-        Get detailed information about a specific ad set.
-        Required permissions: ads_management
-      tags:
-        - Ad Sets
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: adset_id
-          in: path
-          required: true
-          description: Ad set ID (get this from /adsets endpoint)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "23850123640320149"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event"
-      responses:
-        '200':
-          description: Success. Returns detailed ad set information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdSet"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
   /act_{account_id}/insights:
     get:
       operationId: getInsights
       summary: Get unified insights for any level
       description: |
-        Get performance metrics for accounts, campaigns, ad sets, or ads using the unified insights endpoint.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
+        Get comprehensive performance metrics and insights.
+        
+        Métricas de Retenção (/insights):
+        - video_p25_watched_actions: Visualizações até 25%
+        - video_p50_watched_actions: Visualizações até 50%
+        - video_p75_watched_actions: Visualizações até 75%
+        - video_p95_watched_actions: Visualizações até 95%
+        - video_p100_watched_actions: Visualizações completas
+        
+        Métricas de Engajamento (/insights):
+        - video_avg_time_watched_actions: Tempo médio assistido
+        - video_play_actions: Total de plays
+        - video_continuous_2_sec_watched_actions: Views >2s
+        - video_30_sec_watched_actions: Views >30s
       parameters:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (numeric part only)
+          description: Ad account ID
           schema:
             type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: level
-          in: query
-          required: true
-          description: Level of aggregation for the data
-          schema:
-            type: string
-            enum: [account, campaign, adset, ad]
-            default: "account"
+            pattern: '^act_\d+$'
         - name: fields
           in: query
           required: true
-          description: Fields to return
+          description: Comma-separated list of metrics
           schema:
             type: string
-            default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions"
-        - name: filtering
-          in: query
-          description: Filter results by specific criteria. Example for campaign insights - [{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]
-          schema:
-            type: string
+            default: "impressions,reach,spend,clicks,ctr,cpc,actions"
         - name: breakdowns
           in: query
-          description: Optional breakdowns for more detailed analysis. Note - action_type cannot be combined with age,gender
+          description: |
+            Breakdowns Suportados (máximo 2-3):
+            - publisher_platform: facebook, instagram
+            - device_platform: desktop, mobile
+            - age, gender: Demografia
           schema:
             type: string
-            example: "age,gender,device_platform"
+            example: "publisher_platform,age,gender"
         - name: date_preset
           in: query
-          description: Predefined date range for the data
+          description: Limite de 30 dias conforme recomendação
           schema:
             type: string
-            enum: [today, yesterday, last_7d, last_30d, this_month, last_month, lifetime]
+            enum: [today, yesterday, last_7d, last_30d]
             default: "last_30d"
+        - name: filtering
+          in: query
+          description: Priorizar filtros por ID
+          schema:
+            type: string
+            example: '[{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]'
       responses:
         '200':
-          description: Success. Returns insights metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
+          description: Success
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UnifiedInsights"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{account_id}/ads/performance:
+  /act_{account_id}/ads/{ad_id}/creative:
     get:
-      operationId: getAdsPerformance
-      summary: Get ads performance and creative analysis
+      operationId: getCreativeAnalysis
+      summary: Get creative analysis metrics
       description: |
-        Get detailed performance metrics for ads including creative performance.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
+        Análise de Criativos:
+        
+        Informações básicas:
+        - Tipo (imagem, vídeo, carrossel)
+        - Call-to-action e links
+        - Especificações de mídia
+        
+        Métricas de engajamento:
+        - Curtidas e comentários
+        - Compartilhamentos
+        - Cliques em links
+        - Visualizações de vídeo
+        - Tempo médio de visualização
       parameters:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (numeric part only)
+          description: Ad account ID
           schema:
             type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
+            pattern: '^act_\d+$'
+        - name: ad_id
+          in: path
           required: true
-          description: Fields to return
+          description: Ad ID
           schema:
             type: string
-            default: "id,name,creative,spend,impressions,ctr,cpc,actions"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
-            default: "last_7d"
       responses:
         '200':
-          description: Success. Returns ads performance metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
+          description: Success
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AdsPerformance"
+                $ref: "#/components/schemas/CreativeAnalysis"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{account_id}/budget:
+  /act_{account_id}/audiences/insights:
     get:
-      operationId: getBudgetInsights
-      summary: Get budget and ROI analysis
+      operationId: getAudienceInsights
+      summary: Get audience insights and metrics
       description: |
-        Get detailed analysis of budget allocation and return on investment using the insights endpoint.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
+        Análise de Público:
+        
+        Demografia:
+        - Idade e gênero
+        - País e região
+        - Interesses
+        - Comportamentos
+        
+        Métricas por segmento:
+        - Alcance e frequência
+        - CTR e custo
+        - Conversões
+        - ROAS por segmento
       parameters:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (numeric part only)
+          description: Ad account ID
           schema:
             type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
+            pattern: '^act_\d+$'
         - name: fields
           in: query
           required: true
-          description: Fields to return
+          description: Demographic and performance metrics
           schema:
             type: string
-            default: "spend,cost_per_action_type,ctr,cpc,actions,website_purchase_roas"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
-            default: "last_30d"
-        - name: level
-          in: query
-          description: Level of aggregation for the data
-          schema:
-            type: string
-            enum: [account, campaign, adset, ad]
-            default: "account"
+            default: "age,gender,country,region,interests,behaviors,reach,frequency,ctr,spend"
         - name: breakdowns
           in: query
-          description: Optional breakdowns for more detailed analysis
+          description: Máximo 2-3 breakdowns
           schema:
             type: string
-            example: "age,gender,region,publisher_platform,device_platform"
-      responses:
-        '200':
-          description: Success. Returns budget insights metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BudgetInsights"
-
-  /act_{account_id}/customaudiences:
-    get:
-      operationId: getLookalikeAudienceInsights
-      summary: Get lookalike audience insights
-      description: |
-        Get details and performance metrics for lookalike audiences.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "id,name,subtype,delivery_status,lookalike_spec"
-        - name: filtering
-          in: query
-          description: Filter by audience ID
-          schema:
-            type: string
-            example: '[{"field":"id","operator":"EQUAL","value":"120212768315400149"}]'
-      responses:
-        '200':
-          description: Success. Returns audience details and metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LookalikeAudienceInsights"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/ads:
-    get:
-      operationId: getAccountAds
-      summary: List ads in an account
-      description: |
-        Get a list of all ads in the specified ad account.
-        Required permissions: ads_management
-      tags:
-        - Ads
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: campaign_id
-          in: query
-          description: Filter ads by campaign ID
-          schema:
-            type: string
-            example: "120218493633420149"
-        - name: fields
-          in: query
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,creative{id,title,body,image_url,video_id,thumbnail_url},status,effective_status,preview_shareable_link"
-        - name: limit
-          in: query
-          description: Maximum number of ads to return per page
-          schema:
-            type: integer
-            default: 25
-            minimum: 1
-            maximum: 100
-        - name: after
-          in: query
-          description: Cursor for pagination
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns list of ads
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Ad"
-                  paging:
-                    $ref: "#/components/schemas/Paging"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/campaigns/{campaign_id}/performance_insights:
-    get:
-      operationId: getCampaignPerformanceInsights
-      summary: Get campaign performance metrics
-      description: |
-        Get detailed performance metrics and insights for a specific campaign.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID to analyze
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "120218493633420149"
+            default: "publisher_platform,age,gender"
         - name: date_preset
           in: query
-          required: true
-          description: Predefined date range for the data
+          description: Limite de 30 dias
           schema:
             type: string
-            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
-            default: "last_7d"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "impressions,reach,spend,ctr,cpc,cpm,conversions"
-      responses:
-        '200':
-          description: Success. Returns performance metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PerformanceInsights"
-
-  /act_{account_id}/trends/performance:
-    get:
-      operationId: getAccountTrends
-      summary: Get account performance trends and recommendations
-      description: |
-        Get trends analysis using a combination of ads and insights data.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [last_7d, last_30d, this_month, last_month]
+            enum: [last_7d, last_30d]
             default: "last_30d"
       responses:
         '200':
-          description: Success. Returns trends and recommendations based on ads and insights data
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
+          description: Success
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountTrendsPerformance"
+                $ref: "#/components/schemas/AudienceInsights"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
 
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
-      description: |
-        Token de acesso do Meta com as permissões:
-        - ads_management
-        - ads_read
-        - pages_show_list
-        - pages_read_engagement
-
-  headers:
-    BusinessUseCaseUsage:
-      description: Usage stats for business use case
-      schema:
-        type: string
-    RateLimitReset:
-      description: Time until rate limit reset in seconds
-      schema:
-        type: integer
-    CacheControl:
-      description: Cache control directives
-      schema:
-        type: string
-    RetryAfter:
-      description: Time to wait before retrying in seconds
-      schema:
-        type: integer
-
-  responses:
-    BadRequest:
-      description: Invalid request parameters
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    Unauthorized:
-      description: Invalid or expired access token
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    RateLimitExceeded:
-      description: Rate limit exceeded
-      headers:
-        Retry-After:
-          $ref: "#/components/headers/RetryAfter"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
+      description: Meta API Access Token (requires ads_read permission)
 
   schemas:
+    UnifiedInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date_start:
+                type: string
+                format: date
+              impressions:
+                type: string
+              reach:
+                type: string
+              spend:
+                type: string
+              clicks:
+                type: string
+              ctr:
+                type: string
+              cpc:
+                type: string
+              video_metrics:
+                type: object
+                properties:
+                  retention:
+                    type: object
+                    properties:
+                      p25:
+                        type: integer
+                      p50:
+                        type: integer
+                      p75:
+                        type: integer
+                      p95:
+                        type: integer
+                      p100:
+                        type: integer
+                  engagement:
+                    type: object
+                    properties:
+                      avg_time:
+                        type: number
+                      plays:
+                        type: integer
+                      continuous_2s:
+                        type: integer
+                      watched_30s:
+                        type: integer
+
+    CreativeAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [IMAGE, VIDEO, CAROUSEL]
+        call_to_action:
+          type: object
+          properties:
+            type:
+              type: string
+            value:
+              type: object
+        engagement:
+          type: object
+          properties:
+            likes:
+              type: integer
+            comments:
+              type: integer
+            shares:
+              type: integer
+            link_clicks:
+              type: integer
+        video_metrics:
+          type: object
+          properties:
+            views:
+              type: integer
+            avg_watch_time:
+              type: number
+            sound_on_views:
+              type: integer
+            completion_rate:
+              type: number
+            engagement_rate:
+              type: number
+            viewer_retention:
+              type: array
+              items:
+                type: object
+                properties:
+                  percentage:
+                    type: integer
+                  viewers:
+                    type: integer
+
+    AudienceInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              demographics:
+                type: object
+                properties:
+                  age:
+                    type: string
+                  gender:
+                    type: string
+                  country:
+                    type: string
+                  region:
+                    type: string
+                  interests:
+                    type: array
+                    items:
+                      type: string
+                  behaviors:
+                    type: array
+                    items:
+                      type: string
+              metrics:
+                type: object
+                properties:
+                  reach:
+                    type: integer
+                  frequency:
+                    type: number
+                  ctr:
+                    type: number
+                  spend:
+                    type: number
+                  actions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        action_type:
+                          type: string
+                        value:
+                          type: integer
+                  roas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        segment:
+                          type: string
+                        value:
+                          type: number
+
     Error:
       type: object
       properties:
@@ -820,24 +375,12 @@ components:
           properties:
             message:
               type: string
-              description: Error message
-              example: "Invalid parameter"
             type:
               type: string
-              description: Error type
-              example: "OAuthException"
             code:
               type: integer
-              description: Error code
-              example: 100
-            error_subcode:
-              type: integer
-              description: Error subcode
-              example: 33
             fbtrace_id:
               type: string
-              description: Facebook trace ID
-              example: "XYZ123"
 
     CampaignList:
       type: object
@@ -1912,3 +1455,44 @@ components:
                   device_platform:
                     type: string
                     example: "mobile"
+
+responses:
+  BadRequest:
+    description: Invalid request parameters
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/Error"
+  Unauthorized:
+    description: Invalid or expired access token
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/Error"
+  RateLimitExceeded:
+    description: Rate limit exceeded
+    headers:
+      Retry-After:
+        $ref: "#/components/headers/RetryAfter"
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/Error"
+
+headers:
+  BusinessUseCaseUsage:
+    description: Usage stats for business use case
+    schema:
+      type: string
+  RateLimitReset:
+    description: Time until rate limit reset in seconds
+    schema:
+      type: integer
+  CacheControl:
+    description: Cache control directives
+    schema:
+      type: string
+  RetryAfter:
+    description: Time to wait before retrying in seconds
+    schema:
+      type: integer

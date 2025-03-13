@@ -1,16 +1,41 @@
 headers:
   BusinessUseCaseUsage:
-    description: Business use case usage information
+    description: Usage stats for business use case
     schema:
-      type: string
+      type: object
+      properties:
+        business_use_case:
+          type: string
+          description: Current business use case
+          enum: [CAMPAIGNS_MANAGEMENT, INSIGHTS_ANALYSIS, CREATIVE_MANAGEMENT]
+        points_used:
+          type: integer
+          description: API points used in current period
+        points_remaining:
+          type: integer
+          description: API points remaining in current period
+        reset_time:
+          type: string
+          format: date-time
+          description: When points will reset
+
   RateLimitReset:
     description: Time until rate limit reset in seconds
     schema:
       type: integer
+
   CacheControl:
-    description: Cache control directives
+    description: Cache control directives for optimização
     schema:
       type: string
+      default: "public, max-age=300"
+
+  RetryAfter:
+    description: Time to wait before retrying in seconds
+    schema:
+      type: integer
+      minimum: 0
+      maximum: 3600
 
 responses:
   BadRequest:
@@ -19,14 +44,19 @@ responses:
       application/json:
         schema:
           $ref: "#/schemas/Error"
+
   Unauthorized:
     description: Invalid or missing access token
     content:
       application/json:
         schema:
           $ref: "#/schemas/Error"
+
   RateLimitExceeded:
     description: Rate limit exceeded
+    headers:
+      Retry-After:
+        $ref: "#/headers/RetryAfter"
     content:
       application/json:
         schema:
@@ -128,6 +158,7 @@ schemas:
                 type: number
       breakdowns:
         type: object
+        description: Máximo 2-3 breakdowns conforme melhores práticas
         properties:
           publisher_platform:
             type: string

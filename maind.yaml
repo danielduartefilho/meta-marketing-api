@@ -294,6 +294,7 @@ paths:
             type: string
             enum: [account, campaign, adset, ad]
             default: "account"
+            example: "ad"
         - name: fields
           in: query
           required: true
@@ -301,6 +302,7 @@ paths:
           schema:
             type: string
             default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions"
+            example: "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions"
         - name: date_preset
           in: query
           description: Predefined date range for the data
@@ -310,10 +312,14 @@ paths:
             default: "last_7d"
         - name: filtering
           in: query
-          description: JSON array of filter objects to apply
+          description: |
+            JSON array of filter objects to apply. Use this to filter by specific IDs:
+            - For campaigns: [{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]
+            - For ad sets: [{"field":"adset.id","operator":"EQUAL","value":"ADSET_ID"}]
+            - For ads: [{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
           schema:
             type: string
-            example: '[{"field":"campaign.id","operator":"EQUAL","value":"120218493633420149"}]'
+            example: '[{"field":"ad.id","operator":"EQUAL","value":"120218492765400149"}]'
       responses:
         '200':
           description: Success. Returns insights data for the specified level

@@ -197,6 +197,130 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /act_{account_id}/insights:
+    get:
+      operationId: getCampaignDemographics
+      summary: Get campaign demographic data
+      description: |
+        Get demographic breakdown and performance metrics for campaigns.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Audience Insights
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: level
+          in: query
+          required: true
+          description: Level of data aggregation
+          schema:
+            type: string
+            enum: [campaign, adset, ad]
+            default: "campaign"
+        - name: filtering
+          in: query
+          required: true
+          description: Filter by campaign, ad set or ad ID
+          schema:
+            type: string
+            example: '[{"field":"campaign.id","operator":"EQUAL","value":"120218493633420149"}]'
+        - name: breakdowns
+          in: query
+          required: true
+          description: Demographic breakdowns to analyze
+          schema:
+            type: string
+            default: "age,gender,country,region"
+        - name: fields
+          in: query
+          required: true
+          description: Metrics to return
+          schema:
+            type: string
+            default: "reach,impressions,actions"
+      responses:
+        '200':
+          description: Success. Returns demographic insights
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudienceInsights"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/customaudiences:
+    get:
+      operationId: getCustomAudienceDetails
+      summary: Get custom audience details
+      description: |
+        Get details and performance metrics for custom and lookalike audiences.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Audience Insights
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "id,name,subtype,approximate_count,delivery_status,lookalike_spec,time_created,time_updated,operation_status"
+        - name: filtering
+          in: query
+          description: Filter by audience ID
+          schema:
+            type: string
+            example: '[{"field":"id","operator":"EQUAL","value":"120210538460040149"}]'
+      responses:
+        '200':
+          description: Success. Returns audience details and metrics
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookalikeAudienceInsights"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /act_{account_id}/campaigns:
     get:
       operationId: getCampaigns
@@ -258,89 +382,6 @@ paths:
                     name: "Website Traffic Campaign"
                     status: "ACTIVE"
                     objective: "LINK_CLICKS"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/insights:
-    get:
-      operationId: getAccountInsights
-      summary: Get insights data
-      description: |
-        Get performance metrics filtered by campaign, ad set, or ad. Use level parameter to specify data granularity and filtering to target specific items.
-        Examples: level=ad&filtering=[{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
-        Required permissions: ads_management
-      tags:
-        - Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: level
-          in: query
-          required: true
-          description: Level of insights data to return
-          schema:
-            type: string
-            enum: [account, campaign, adset, ad]
-            default: "account"
-            example: "ad"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions"
-            example: "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, this_month, last_month, this_quarter, lifetime, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d]
-            default: "last_7d"
-        - name: filtering
-          in: query
-          description: |
-            JSON array of filter objects to apply. Use this to filter by specific IDs:
-            - For campaigns: [{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]
-            - For ad sets: [{"field":"adset.id","operator":"EQUAL","value":"ADSET_ID"}]
-            - For ads: [{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
-          schema:
-            type: string
-            example: '[{"field":"ad.id","operator":"EQUAL","value":"120218492765400149"}]'
-      responses:
-        '200':
-          description: Success. Returns insights data for the specified level
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/InsightData"
-                  paging:
-                    $ref: "#/components/schemas/Paging"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':

@@ -469,10 +469,10 @@ paths:
       operationId: getAccountAds
       summary: List ads in an account
       description: |
-        Get a list of all ads and creatives in a specific account.
+        Get a list of all ads in the specified ad account.
         Required permissions: ads_management
       tags:
-        - Ads & Creatives
+        - Ads
       security:
         - bearerAuth: []
       parameters:
@@ -489,23 +489,21 @@ paths:
           description: Filter ads by campaign ID
           schema:
             type: string
-            pattern: '^\d+$'
             example: "120218493633420149"
         - name: fields
           in: query
-          required: true
           description: Comma-separated list of fields to return
           schema:
             type: string
             default: "id,name,creative{id,title,body,image_url,video_id,thumbnail_url},status,effective_status,preview_shareable_link"
         - name: limit
           in: query
-          description: Number of records to return per request
+          description: Maximum number of ads to return per page
           schema:
             type: integer
+            default: 25
             minimum: 1
             maximum: 100
-            default: 25
         - name: after
           in: query
           description: Cursor for pagination
@@ -513,7 +511,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Success. Returns a list of ads and their creatives
+          description: Success. Returns list of ads
           headers:
             X-Business-Use-Case-Usage:
               $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -532,69 +530,6 @@ paths:
                       $ref: "#/components/schemas/Ad"
                   paging:
                     $ref: "#/components/schemas/Paging"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/ads/{ad_id}/insights:
-    get:
-      operationId: getAdInsights
-      summary: Get ad performance metrics
-      description: |
-        Get detailed performance metrics for a specific ad.
-        Required permissions: ads_management
-      tags:
-        - Ads & Creatives
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: ad_id
-          in: path
-          required: true
-          description: Ad ID
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "120218493633420149"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, this_month, last_month, this_quarter, lifetime, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d]
-            default: "last_30d"
-      responses:
-        '200':
-          description: Success. Returns performance metrics for the ad
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreativePerformance"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':

@@ -154,6 +154,57 @@ security:
   - bearerAuth: []
 
 paths:
+  /me/adaccounts:
+    get:
+      operationId: getAdAccounts
+      summary: List ad accounts
+      description: |
+        Get a list of ad accounts that the user has access to.
+        Required permissions: ads_management
+      tags:
+        - Accounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: "id,name,account_status"
+      responses:
+        '200':
+          description: Success. Returns a list of ad accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Ad account ID
+                          example: "906594379912215"
+                        name:
+                          type: string
+                          description: Ad account name
+                          example: "My Ad Account"
+                        account_status:
+                          type: integer
+                          description: Account status (1 = active, 2 = disabled)
+                          example: 1
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /me/accounts:
     get:
       operationId: getPageAccounts
@@ -247,6 +298,7 @@ paths:
       description: |
         Get a list of all campaigns for the specified ad account.
         Required permissions: ads_management
+        Note: The account_id will be automatically discovered using /me/adaccounts
       tags:
         - Campaigns
       security:
@@ -255,7 +307,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (numeric ID only)
+          description: Ad account ID (automatically discovered)
           schema:
             type: string
             pattern: '^\d+$'
@@ -314,6 +366,7 @@ paths:
       description: |
         Get detailed information about a specific campaign.
         Required permissions: ads_management
+        Note: The account_id will be automatically discovered using /me/adaccounts
       tags:
         - Campaigns
       security:
@@ -322,7 +375,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (numeric ID only)
+          description: Ad account ID (automatically discovered)
           schema:
             type: string
             pattern: '^\d+$'
@@ -330,7 +383,7 @@ paths:
         - name: campaign_id
           in: path
           required: true
-          description: Campaign ID (numeric ID only)
+          description: Campaign ID
           schema:
             type: string
             pattern: '^\d+$'
@@ -371,6 +424,7 @@ paths:
       description: |
         Get performance metrics for a specific campaign.
         Required permissions: ads_read
+        Note: The account_id will be automatically discovered using /me/adaccounts
       tags:
         - Insights
       security:
@@ -379,7 +433,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (numeric ID only)
+          description: Ad account ID (automatically discovered)
           schema:
             type: string
             pattern: '^\d+$'
@@ -387,7 +441,7 @@ paths:
         - name: campaign_id
           in: path
           required: true
-          description: Campaign ID (numeric ID only)
+          description: Campaign ID
           schema:
             type: string
             pattern: '^\d+$'

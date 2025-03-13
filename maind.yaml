@@ -1,157 +1,15 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
-  title: Meta Marketing API
+  title: Meta Marketing API Connector
+  version: '1.4.0'
   description: |
-    Meta Marketing API for campaign management and insights.
-    Rate limits and best practices are enforced.
-
-    # Authentication Flow
-    1. User Bearer Token:
-       - Stored in connector configuration
-       - Required permissions:
-         * pages_show_list (for page discovery)
-         * pages_read_engagement (for metrics and insights)
-         * ads_management (for campaign access)
-         * ads_read (for insights)
-         * read_insights (for detailed metrics)
-         * attribution_read (for conversion data)
-       - Token Refresh:
-         * On error 190 (expired token)
-         * On error 200 (permission error)
-         * On error 10 (app configuration)
-
-    2. Resource Discovery:
-       a. Page Access:
-          - Call /me/accounts with pages_show_list
-          - Select page with ID 102264027940184
-          - Use pages_read_engagement for:
-            * Page metrics
-            * Post insights
-            * Engagement data
-          - Use read_insights for:
-            * Detailed analytics
-            * Custom metrics
-            * Historical data
-          - Cache Strategy:
-            * Page data: 24 hours
-            * Insights: 1 hour
-            * Engagement: 5 minutes
-
-       b. Ad Account:
-          - Use account ID 906594379912215
-          - Use ads_management for:
-            * Campaign access
-            * Ad set management
-            * Creative control
-          - Use attribution_read for:
-            * Conversion data
-            * Attribution windows
-            * Custom events
-          - Cache Strategy:
-            * Account data: 24 hours
-            * Campaign list: 1 hour
-            * Insights: 5 minutes
-
-    3. Cache Management:
-       - Hierarchical Cache:
-         * Level 1: Basic info (24h)
-         * Level 2: Lists and metrics (1h)
-         * Level 3: Real-time data (5m)
-       - Auto-refresh before expiry
-       - Stale-while-revalidate
-       - Error fallback to cache
-
-    4. Error Handling:
-       - Automatic retry on token errors
-       - Permission verification
-       - Rate limit backoff
-       - Detailed error messages
-
-  version: '22.0'
-  x-connector-config:
-    page-id: "102264027940184"
-    ad-account-id: "906594379912215"
-    required-permissions:
-      - pages_show_list
-      - pages_read_engagement
-      - ads_management
-      - ads_read
-      - read_insights
-      - attribution_read
-    error-retry:
-      max-attempts: 3
-      backoff-ms: 1000
-      errors:
-        - code: 190
-          action: refresh_token
-        - code: 200
-          action: verify_permissions
-        - code: 10
-          action: verify_app_config
-    cache-config:
-      page-info:
-        duration: 86400        # 24 hours
-        refresh-before: 3600   # 1 hour before
-        stale-while-revalidate: true
-        fields:
-          basic:               # Level 1 (24h)
-            - id
-            - name
-            - category
-            - tasks
-          metrics:            # Level 2 (1h)
-            - engagement
-            - posts
-            - insights
-          real-time:         # Level 3 (5m)
-            - feed
-            - comments
-            - reactions
-      account-info:
-        duration: 86400        # 24 hours
-        refresh-before: 3600   # 1 hour before
-        stale-while-revalidate: true
-        fields:
-          basic:               # Level 1 (24h)
-            - account_id
-            - name
-            - status
-            - currency
-            - timezone
-          metrics:            # Level 2 (1h)
-            - insights
-            - campaigns
-            - adsets
-          real-time:         # Level 3 (5m)
-            - spend
-            - actions
-            - conversions
-  x-rate-limiting:
-    standard-tier:
-      points: 9000
-      window: 300
-      block: 60
-    development-tier:
-      points: 60
-      window: 300
-      block: 300
-  x-performance:
-    cache-ttl:
-      level1: 86400          # 24 hours
-      level2: 3600           # 1 hour
-      level3: 300            # 5 minutes
-    timeout:
-      sync: 30
-      async: 3600
-    compression: true
-    batch-size: 100
+    Meta Marketing API Connector for accessing campaign data and insights.
+    API Version: v22.0
+    Base URL: https://graph.facebook.com/v22.0
 
 servers:
   - url: https://graph.facebook.com/v22.0
     description: Meta Graph API v22.0
-
-security:
-  - bearerAuth: []
 
 paths:
   /me/adaccounts:
@@ -161,7 +19,6 @@ paths:
       description: |
         Get a list of ad accounts that the user has access to.
         Required permissions: ads_management
-        This endpoint must be called first to get the ad account ID.
       tags:
         - Accounts
       security:
@@ -299,7 +156,7 @@ paths:
       description: |
         Get a list of all campaigns for the specified ad account.
         Required permissions: ads_management
-        Note: The account_id should be the numeric ID (without act_ prefix)
+        Note: Use the numeric ID from /me/adaccounts (without act_ prefix)
       tags:
         - Campaigns
       security:
@@ -367,7 +224,7 @@ paths:
       description: |
         Get detailed information about a specific campaign.
         Required permissions: ads_management
-        Note: The account_id should be the numeric ID (without act_ prefix)
+        Note: Use the numeric ID from /me/adaccounts (without act_ prefix)
       tags:
         - Campaigns
       security:
@@ -419,118 +276,7 @@ paths:
           $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/insights:
-    get:
-      operationId: getCampaignInsights
-      summary: Get campaign insights
-      description: |
-        Get performance metrics for a specific campaign.
-        Required permissions: ads_read
-        Note: The account_id should be the numeric ID (without act_ prefix)
-      tags:
-        - Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: level
-          in: query
-          required: true
-          description: Level of insights data
-          schema:
-            type: string
-            enum: ["campaign"]
-            default: "campaign"
-        - name: filtering
-          in: query
-          required: true
-          description: Filter to specific campaign (get campaign_id from /campaigns endpoint)
-          schema:
-            type: array
-            items:
-              type: object
-              properties:
-                field:
-                  type: string
-                  enum: ["campaign.id"]
-                  default: "campaign.id"
-                operator:
-                  type: string
-                  enum: ["EQUAL"]
-                  default: "EQUAL"
-                value:
-                  type: string
-                  description: Campaign ID to filter by
-                  example: "120218493633420149"
-        - name: fields
-          in: query
-          required: true
-          description: List of metrics to return
-          schema:
-            type: array
-            items:
-              type: string
-              enum:
-                - impressions
-                - reach
-                - spend
-                - inline_post_engagement
-                - video_p25_watched_actions
-                - video_p50_watched_actions
-                - video_p75_watched_actions
-                - video_p95_watched_actions
-                - video_avg_time_watched_actions
-            default:
-              - impressions
-              - reach
-              - spend
-        - name: date_preset
-          in: query
-          description: Predefined date range for the report
-          schema:
-            type: string
-            enum:
-              - today
-              - yesterday
-              - this_month
-              - last_month
-              - this_quarter
-              - lifetime
-            default: "last_month"
-        - name: time_increment
-          in: query
-          description: Group results by N days
-          schema:
-            type: integer
-            enum: [1, 7, 28]
-            default: 1
-      responses:
-        '200':
-          description: Success. Returns campaign performance metrics
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InsightsResponse"
-              example:
-                data:
-                  - date_start: "2025-03-01"
-                    date_end: "2025-03-01"
-                    campaign_id: "120218493633420149"
-                    impressions: 1234
-                    reach: 987
-                    spend: 50.25
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
+    $ref: './campaign-insights.yaml#/paths/~1act_906594379912215~1insights'
 
 components:
   securitySchemes:
@@ -539,19 +285,12 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        User access token stored in connector.
-        Required permissions:
-        - pages_show_list (for page discovery)
-        - pages_read_engagement (for metrics and insights)
-        - ads_management (for campaign access)
-        - ads_read (for insights)
-        - business_management (for account access)
-        - read_insights (for detailed metrics)
-        - attribution_read (for conversion data)
+        Access token obtained from Facebook OAuth 2.0.
+        Required scopes: ads_management, ads_read
 
   headers:
     BusinessUseCaseUsage:
-      description: Business use case usage information
+      description: Usage stats for business use case
       schema:
         type: string
     RateLimitReset:
@@ -562,99 +301,33 @@ components:
       description: Cache control directives
       schema:
         type: string
+    RetryAfter:
+      description: Time to wait before retrying in seconds
+      schema:
+        type: integer
 
   responses:
     BadRequest:
-      description: Bad Request
+      description: Invalid request parameters
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
-                  type:
-                    type: string
-                    description: Error type
-                  code:
-                    type: integer
-                    description: Error code
-                  fbtrace_id:
-                    type: string
-                    description: Facebook trace ID
-            example:
-              error:
-                message: "Invalid OAuth access token."
-                type: "OAuthException"
-                code: 190
-                fbtrace_id: "AbCdEf123456"
-
+            $ref: "#/components/schemas/Error"
     Unauthorized:
-      description: Unauthorized
+      description: Invalid or expired access token
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
-                  type:
-                    type: string
-                    description: Error type
-                  code:
-                    type: integer
-                    description: Error code
-                  fbtrace_id:
-                    type: string
-                    description: Facebook trace ID
-            example:
-              error:
-                message: "Error validating access token"
-                type: "OAuthException"
-                code: 190
-                fbtrace_id: "AbCdEf123456"
-
+            $ref: "#/components/schemas/Error"
     RateLimitExceeded:
       description: Rate limit exceeded
       headers:
-        X-Business-Use-Case-Usage:
-          $ref: "#/components/headers/BusinessUseCaseUsage"
-        X-Rate-Limit-Reset:
-          $ref: "#/components/headers/RateLimitReset"
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
-                  type:
-                    type: string
-                    description: Error type
-                  code:
-                    type: integer
-                    description: Error code
-                  fbtrace_id:
-                    type: string
-                    description: Facebook trace ID
-            example:
-              error:
-                message: "Application request limit reached"
-                type: "OAuthException"
-                code: 4
-                fbtrace_id: "AbCdEf123456"
+            $ref: "#/components/schemas/Error"
 
   schemas:
     Error:
@@ -663,31 +336,27 @@ components:
         error:
           type: object
           properties:
-            code:
-              type: integer
             message:
               type: string
+              description: Error message
+              example: "Invalid parameter"
             type:
               type: string
-    PageToken:
-      type: object
-      properties:
-        access_token:
-          type: string
-          description: Page access token
-    Campaign:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        status:
-          type: string
-          enum: [ACTIVE, PAUSED, DELETED]
-        objective:
-          type: string
-          enum: [LINK_CLICKS, POST_ENGAGEMENT, VIDEO_VIEWS]
+              description: Error type
+              example: "OAuthException"
+            code:
+              type: integer
+              description: Error code
+              example: 100
+            error_subcode:
+              type: integer
+              description: Error subcode
+              example: 33
+            fbtrace_id:
+              type: string
+              description: Facebook trace ID
+              example: "XYZ123"
+
     CampaignList:
       type: object
       properties:
@@ -705,73 +374,42 @@ components:
                   type: string
                 after:
                   type: string
-    InsightsResponse:
+
+    Campaign:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              impressions:
-                type: integer
-              reach:
-                type: integer
-              spend:
-                type: number
-              inline_post_engagement:
-                type: integer
-              video_p25_watched_actions:
-                type: integer
-              video_p50_watched_actions:
-                type: integer
-              video_p75_watched_actions:
-                type: integer
-              video_p95_watched_actions:
-                type: integer
-              video_avg_time_watched_actions:
-                type: number
-    AdAccountList:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/AdAccount"
-        paging:
-          type: object
-          properties:
-            cursors:
-              type: object
-              properties:
-                before:
-                  type: string
-                after:
-                  type: string
-    AdAccount:
-      type: object
-      properties:
-        account_id:
+        id:
           type: string
-          description: Ad account ID
-          example: "906594379912215"
+          description: Campaign ID
+          example: "120218493633420149"
         name:
           type: string
-          description: Ad account name
-          example: "Main Ad Account"
-        account_status:
+          description: Campaign name
+          example: "Website Traffic Campaign"
+        status:
           type: string
-          description: Account status
-          enum: [ACTIVE, DISABLED, UNSETTLED, PENDING_RISK_REVIEW, PENDING_SETTLEMENT, IN_GRACE_PERIOD, PENDING_CLOSURE, CLOSED, ANY_ACTIVE, ANY_CLOSED]
+          description: Campaign status
+          enum: ["ACTIVE", "PAUSED", "DELETED", "ARCHIVED"]
           example: "ACTIVE"
-        business_name:
+        objective:
           type: string
-          description: Business name
-          example: "My Business"
-        currency:
+          description: Campaign objective
+          enum: ["LINK_CLICKS", "POST_ENGAGEMENT", "VIDEO_VIEWS", "BRAND_AWARENESS", "REACH"]
+          example: "LINK_CLICKS"
+        daily_budget:
+          type: integer
+          description: Daily budget in cents
+          example: 5000
+        lifetime_budget:
+          type: integer
+          description: Lifetime budget in cents
+          example: 50000
+        bid_strategy:
           type: string
-          description: Account currency
-          example: "USD"
+          description: Bidding strategy
+          enum: ["LOWEST_COST_WITH_BID_CAP", "LOWEST_COST_WITHOUT_CAP"]
+          example: "LOWEST_COST_WITH_BID_CAP"
+
     PageAccountList:
       type: object
       properties:
@@ -781,6 +419,7 @@ components:
             $ref: "#/components/schemas/PageAccount"
         paging:
           $ref: "#/components/schemas/Paging"
+
     PageAccount:
       type: object
       properties:
@@ -808,31 +447,3 @@ components:
             after:
               type: string
               example: "MQZDZD"
-    BusinessList:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/Business"
-        paging:
-          $ref: "#/components/schemas/Paging"
-    Business:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Business ID
-          example: "123456789"
-        name:
-          type: string
-          description: Business name
-          example: "Main Business"
-        verification_status:
-          type: string
-          description: Verification status
-          example: "verified"
-        is_disabled:
-          type: boolean
-          description: Is disabled
-          example: false

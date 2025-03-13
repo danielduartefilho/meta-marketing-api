@@ -460,6 +460,68 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /act_{account_id}/insights/budget:
+    get:
+      operationId: getBudgetInsights
+      summary: Get budget and ROI analysis
+      description: |
+        Get detailed analysis of budget allocation and return on investment using the insights endpoint.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "spend,cost_per_action_type,ctr,cpc,actions,website_purchase_roas"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
+            default: "last_30d"
+        - name: level
+          in: query
+          description: Level of aggregation for the data
+          schema:
+            type: string
+            enum: [account, campaign, adset, ad]
+            default: "account"
+        - name: breakdowns
+          in: query
+          description: Optional breakdowns for more detailed analysis
+          schema:
+            type: string
+            example: "age,gender,region,publisher_platform,device_platform"
+      responses:
+        '200':
+          description: Success. Returns budget insights metrics
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetInsights"
+
   /act_{account_id}/customaudiences:
     get:
       operationId: getLookalikeAudienceInsights
@@ -586,55 +648,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/budget_analysis:
-    get:
-      operationId: getBudgetAnalysis
-      summary: Get budget vs. return analysis
-      description: |
-        Get detailed analysis of budget allocation and return on investment.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "spend,roi,cpa,cpc,ctr"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
-            default: "last_30d"
-      responses:
-        '200':
-          description: Success. Returns budget analysis metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BudgetAnalysis"
 
   /act_{account_id}/campaigns/{campaign_id}/performance_insights:
     get:
@@ -1225,7 +1238,7 @@ components:
               description: Target country for the lookalike audience
               example: "BR"
 
-    BudgetAnalysis:
+    BudgetInsights:
       type: object
       properties:
         data:
@@ -1236,31 +1249,71 @@ components:
               spend:
                 type: string
                 description: Total amount spent
-                example: "5000.00"
-              roi:
-                type: string
-                description: Return on investment
-                example: "2.5"
-              cpa:
-                type: string
-                description: Cost per action
-                example: "12.50"
-              cpc:
-                type: string
-                description: Cost per click
-                example: "0.50"
+                example: "1147.20"
+              cost_per_action_type:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: Type of action
+                      example: "onsite_conversion.lead"
+                    value:
+                      type: string
+                      description: Cost per action
+                      example: "95.60"
               ctr:
                 type: string
                 description: Click-through rate
-                example: "2.3"
+                example: "1.52"
+              cpc:
+                type: string
+                description: Cost per click
+                example: "1.08"
+              actions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: Type of action
+                      example: "landing_page_view"
+                    value:
+                      type: string
+                      description: Number of actions
+                      example: "76"
+              website_purchase_roas:
+                type: string
+                description: Return on ad spend for website purchases
+                example: "0.61"
               date_start:
                 type: string
                 format: date
-                example: "2025-03-13"
+                example: "2025-03-06"
               date_stop:
                 type: string
                 format: date
-                example: "2025-03-13"
+                example: "2025-03-12"
+              breakdowns:
+                type: object
+                properties:
+                  age:
+                    type: string
+                    example: "25-34"
+                  gender:
+                    type: string
+                    example: "female"
+                  region:
+                    type: string
+                    example: "São Paulo"
+                  publisher_platform:
+                    type: string
+                    example: "facebook"
+                  device_platform:
+                    type: string
+                    example: "mobile"
 
     PerformanceInsights:
       type: object

@@ -160,18 +160,17 @@ class MetaAPITester:
                 
                 if ads and "data" in ads and ads["data"]:
                     ad = ads["data"][0]
-                    if "creative" in ad and "id" in ad["creative"]:
-                        creative_id = ad["creative"]["id"]
-                        
-                        # 7. Métricas de performance do criativo
-                        print("\n7. Testando métricas do criativo")
-                        self.test_endpoint(
-                            f"/{creative_id}/insights",
-                            params={
-                                "fields": "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions",
-                                "date_preset": "last_30d"
-                            }
-                        )
+                    ad_id = ad["id"]
+                    
+                    # 7. Métricas de performance do anúncio
+                    print("\n7. Testando métricas do anúncio")
+                    self.test_endpoint(
+                        f"/act_{account_id}/ads/{ad_id}/insights",
+                        params={
+                            "fields": "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions",
+                            "date_preset": "last_30d"
+                        }
+                    )
                 
                 # 8. Insights da campanha
                 print("\n8. Testando insights")

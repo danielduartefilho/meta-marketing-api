@@ -546,22 +546,30 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /{creative_id}/insights:
+  /act_{account_id}/ads/{ad_id}/insights:
     get:
-      operationId: getCreativePerformance
-      summary: Get creative performance metrics
+      operationId: getAdInsights
+      summary: Get ad performance metrics
       description: |
-        Get detailed performance metrics for a specific creative.
+        Get detailed performance metrics for a specific ad.
         Required permissions: ads_management
       tags:
         - Ads & Creatives
       security:
         - bearerAuth: []
       parameters:
-        - name: creative_id
+        - name: account_id
           in: path
           required: true
-          description: Creative ID
+          description: Ad account ID (numeric part only, without act_ prefix)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: ad_id
+          in: path
+          required: true
+          description: Ad ID
           schema:
             type: string
             pattern: '^\d+$'
@@ -582,7 +590,7 @@ paths:
             default: "last_30d"
       responses:
         '200':
-          description: Success. Returns performance metrics for the creative
+          description: Success. Returns performance metrics for the ad
           headers:
             X-Business-Use-Case-Usage:
               $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -826,10 +834,8 @@ components:
           properties:
             before:
               type: string
-              example: "MAZDZD"
             after:
               type: string
-              example: "MQZDZD"
 
     AdSet:
       type: object

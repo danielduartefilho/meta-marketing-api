@@ -161,6 +161,7 @@ paths:
       description: |
         Get a list of ad accounts that the user has access to.
         Required permissions: ads_management
+        This endpoint must be called first to get the ad account ID.
       tags:
         - Accounts
       security:
@@ -291,14 +292,14 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{ad_account_id}/campaigns:
+  /{ad_account_id}/campaigns:
     get:
       operationId: getCampaigns
       summary: List campaigns
       description: |
         Get a list of all campaigns for the specified ad account.
         Required permissions: ads_management
-        Note: The ad_account_id should include the 'act_' prefix
+        Note: Use the full ad_account_id (with act_ prefix) from /me/adaccounts
       tags:
         - Campaigns
       security:
@@ -307,7 +308,7 @@ paths:
         - name: ad_account_id
           in: path
           required: true
-          description: Full ad account ID (with act_ prefix)
+          description: Full ad account ID (including act_ prefix from /me/adaccounts)
           schema:
             type: string
             pattern: '^act_\d+$'
@@ -359,14 +360,14 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{ad_account_id}/campaigns/{campaign_id}:
+  /{ad_account_id}/campaigns/{campaign_id}:
     get:
       operationId: getCampaignById
       summary: Get campaign details
       description: |
         Get detailed information about a specific campaign.
         Required permissions: ads_management
-        Note: The ad_account_id should include the 'act_' prefix
+        Note: Use the full ad_account_id (with act_ prefix) from /me/adaccounts
       tags:
         - Campaigns
       security:
@@ -375,7 +376,7 @@ paths:
         - name: ad_account_id
           in: path
           required: true
-          description: Full ad account ID (with act_ prefix)
+          description: Full ad account ID (including act_ prefix from /me/adaccounts)
           schema:
             type: string
             pattern: '^act_\d+$'
@@ -383,7 +384,7 @@ paths:
         - name: campaign_id
           in: path
           required: true
-          description: Campaign ID (discovered via /campaigns endpoint)
+          description: Campaign ID (get this from /campaigns endpoint)
           schema:
             type: string
             pattern: '^\d+$'
@@ -417,14 +418,14 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{ad_account_id}/insights:
+  /{ad_account_id}/insights:
     get:
       operationId: getCampaignInsights
       summary: Get campaign insights
       description: |
         Get performance metrics for a specific campaign.
         Required permissions: ads_read
-        Note: The ad_account_id should include the 'act_' prefix
+        Note: Use the full ad_account_id (with act_ prefix) from /me/adaccounts
       tags:
         - Insights
       security:
@@ -433,7 +434,7 @@ paths:
         - name: ad_account_id
           in: path
           required: true
-          description: Full ad account ID (with act_ prefix)
+          description: Full ad account ID (including act_ prefix from /me/adaccounts)
           schema:
             type: string
             pattern: '^act_\d+$'
@@ -449,7 +450,7 @@ paths:
         - name: filtering
           in: query
           required: true
-          description: Filter to specific campaign (discovered via /campaigns endpoint)
+          description: Filter to specific campaign (get campaign_id from /campaigns endpoint)
           schema:
             type: array
             items:

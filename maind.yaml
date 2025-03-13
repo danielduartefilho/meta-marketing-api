@@ -420,88 +420,7 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          description: Ad set ID
-                          example: "23850123640320149"
-                        name:
-                          type: string
-                          description: Ad set name
-                          example: "Lookalike Audience - São Paulo"
-                        targeting:
-                          type: object
-                          description: Targeting specifications
-                          properties:
-                            age_min:
-                              type: integer
-                              example: 25
-                            age_max:
-                              type: integer
-                              example: 55
-                            genders:
-                              type: array
-                              items:
-                                type: integer
-                                enum: [1, 2]  # 1 = male, 2 = female
-                            geo_locations:
-                              type: object
-                              properties:
-                                countries:
-                                  type: array
-                                  items:
-                                    type: string
-                                regions:
-                                  type: array
-                                  items:
-                                    type: object
-                                    properties:
-                                      key:
-                                        type: string
-                                      name:
-                                        type: string
-                            interests:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  id:
-                                    type: string
-                                  name:
-                                    type: string
-                            behaviors:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  id:
-                                    type: string
-                                  name:
-                                    type: string
-                        daily_budget:
-                          type: integer
-                          description: Daily budget in account currency (x100)
-                          example: 5000
-                        lifetime_budget:
-                          type: integer
-                          description: Lifetime budget in account currency (x100)
-                          example: 50000
-                        status:
-                          type: string
-                          description: Ad set status
-                          enum: [ACTIVE, PAUSED, ARCHIVED, DELETED]
-                          example: "ACTIVE"
-                        bid_strategy:
-                          type: string
-                          description: Bidding strategy
-                          enum: [LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP]
-                          example: "LOWEST_COST_WITHOUT_CAP"
-                        billing_event:
-                          type: string
-                          description: The billing event type
-                          enum: [APP_INSTALLS, CLICKS, IMPRESSIONS, LINK_CLICKS, NONE, OFFER_CLAIMS, PAGE_LIKES, POST_ENGAGEMENT, THRUPLAY, PURCHASE]
-                          example: "IMPRESSIONS"
+                      $ref: "#/components/schemas/AdSet"
                   paging:
                     $ref: "#/components/schemas/Paging"
         '400':
@@ -511,7 +430,7 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /adsets/{adset_id}:
+  /{adset_id}:
     get:
       operationId: getAdSetById
       summary: Get ad set details

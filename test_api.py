@@ -141,7 +141,7 @@ class MetaAPITester:
                     # 5. Detalhes do conjunto de anúncios
                     print("\n5. Testando detalhes do conjunto de anúncios")
                     self.test_endpoint(
-                        f"/adsets/{adset_id}",
+                        f"/{adset_id}",
                         params={
                             "fields": "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event"
                         }

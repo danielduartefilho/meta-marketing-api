@@ -245,7 +245,7 @@ paths:
       operationId: getCampaigns
       summary: List campaigns
       description: |
-        Get a list of all campaigns for the specified ad account.
+        Get a list of all campaigns for ad account 906594379912215.
         Required permissions: ads_management
       tags:
         - Campaigns
@@ -296,7 +296,7 @@ paths:
                 $ref: "#/components/schemas/CampaignList"
               example:
                 data:
-                  - id: "act_906594379912215_23847392874"
+                  - id: "23847392874"
                     name: "Website Traffic Campaign"
                     status: "ACTIVE"
                     objective: "LINK_CLICKS"
@@ -314,7 +314,7 @@ paths:
       description: |
         Get detailed information about a specific campaign.
         Required permissions: ads_management
-        Note: campaign_id must include account prefix (act_ACCOUNT_ID_CAMPAIGN_ID)
+        Note: Use campaign_id without account prefix
       tags:
         - Campaigns
       security:
@@ -331,11 +331,11 @@ paths:
         - name: campaign_id
           in: path
           required: true
-          description: Campaign ID with account prefix (act_ACCOUNT_ID_CAMPAIGN_ID)
+          description: Campaign ID (without account prefix)
           schema:
             type: string
-            pattern: '^act_\d+_\d+$'
-            example: "act_906594379912215_23847392874"
+            pattern: '^\d+$'
+            example: "23847392874"
         - name: fields
           in: query
           required: true
@@ -351,7 +351,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Campaign"
               example:
-                id: "act_906594379912215_23847392874"
+                id: "23847392874"
                 name: "Website Traffic Campaign"
                 status: "ACTIVE"
                 objective: "LINK_CLICKS"
@@ -372,7 +372,7 @@ paths:
       description: |
         Get performance metrics for a specific campaign.
         Required permissions: ads_read
-        Note: campaign_id must include account prefix (act_ACCOUNT_ID_CAMPAIGN_ID)
+        Note: Use campaign_id without account prefix
       tags:
         - Insights
       security:
@@ -389,11 +389,11 @@ paths:
         - name: campaign_id
           in: path
           required: true
-          description: Campaign ID with account prefix (act_ACCOUNT_ID_CAMPAIGN_ID)
+          description: Campaign ID (without account prefix)
           schema:
             type: string
-            pattern: '^act_\d+_\d+$'
-            example: "act_906594379912215_23847392874"
+            pattern: '^\d+$'
+            example: "23847392874"
         - name: fields
           in: query
           required: true
@@ -447,7 +447,7 @@ paths:
                 data:
                   - date_start: "2025-03-01"
                     date_end: "2025-03-01"
-                    campaign_id: "act_906594379912215_23847392874"
+                    campaign_id: "23847392874"
                     impressions: 1234
                     reach: 987
                     spend: 50.25

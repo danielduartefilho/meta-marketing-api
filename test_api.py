@@ -165,10 +165,16 @@ class MetaAPITester:
                     # 7. Métricas de performance do anúncio
                     print("\n7. Testando métricas do anúncio")
                     self.test_endpoint(
-                        f"/act_{account_id}/ads/{ad_id}/insights",
+                        f"/act_{account_id}/insights",
                         params={
+                            "level": "ad",
                             "fields": "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions",
-                            "date_preset": "last_30d"
+                            "date_preset": "last_30d",
+                            "filtering": json.dumps([{
+                                "field": "ad.id",
+                                "operator": "EQUAL",
+                                "value": ad_id
+                            }])
                         }
                     )
                 

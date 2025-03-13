@@ -33,7 +33,10 @@ info:
             * Detailed analytics
             * Custom metrics
             * Historical data
-          - Cache page details for 24 hours
+          - Cache Strategy:
+            * Page data: 24 hours
+            * Insights: 1 hour
+            * Engagement: 5 minutes
 
        b. Ad Account:
           - Call /me/businesses with business_management
@@ -47,9 +50,21 @@ info:
             * Conversion data
             * Attribution windows
             * Custom events
-          - Cache account details and status
+          - Cache Strategy:
+            * Account data: 24 hours
+            * Campaign list: 1 hour
+            * Insights: 5 minutes
 
-    3. Error Handling:
+    3. Cache Management:
+       - Hierarchical Cache:
+         * Level 1: Basic info (24h)
+         * Level 2: Lists and metrics (1h)
+         * Level 3: Real-time data (5m)
+       - Auto-refresh before expiry
+       - Stale-while-revalidate
+       - Error fallback to cache
+
+    4. Error Handling:
        - Automatic retry on token errors
        - Permission verification
        - Rate limit backoff
@@ -59,7 +74,6 @@ info:
   x-connector-config:
     page-id: "102264027940184"
     ad-account-id: "906594379912215"
-    token-cache-duration: 3600
     required-permissions:
       - pages_show_list
       - pages_read_engagement
@@ -80,36 +94,54 @@ info:
           action: verify_app_config
     cache-config:
       page-info:
-        duration: 86400     # 24 hours
-        refresh-before: 3600 # 1 hour before
+        duration: 86400        # 24 hours
+        refresh-before: 3600   # 1 hour before
+        stale-while-revalidate: true
         fields:
-          - id
-          - name
-          - category
-          - tasks
-          - engagement
-          - posts
-          - insights
+          basic:               # Level 1 (24h)
+            - id
+            - name
+            - category
+            - tasks
+          metrics:            # Level 2 (1h)
+            - engagement
+            - posts
+            - insights
+          real-time:         # Level 3 (5m)
+            - feed
+            - comments
+            - reactions
       account-info:
-        duration: 86400     # 24 hours
-        refresh-before: 3600 # 1 hour before
+        duration: 86400        # 24 hours
+        refresh-before: 3600   # 1 hour before
+        stale-while-revalidate: true
         fields:
-          - account_id
-          - name
-          - status
-          - currency
-          - timezone
-          - insights
-          - campaigns
+          basic:               # Level 1 (24h)
+            - account_id
+            - name
+            - status
+            - currency
+            - timezone
+          metrics:            # Level 2 (1h)
+            - insights
+            - campaigns
+            - adsets
+          real-time:         # Level 3 (5m)
+            - spend
+            - actions
+            - conversions
       business-info:
-        duration: 604800    # 7 days
-        refresh-before: 86400 # 1 day before
+        duration: 604800       # 7 days
+        refresh-before: 86400  # 1 day before
+        stale-while-revalidate: true
         fields:
-          - id
-          - name
-          - verification_status
-          - owned_pages
-          - client_ad_accounts
+          basic:               # Level 1 (7d)
+            - id
+            - name
+            - verification_status
+          metrics:            # Level 2 (24h)
+            - owned_pages
+            - client_ad_accounts
   x-rate-limiting:
     standard-tier:
       points: 9000
@@ -120,7 +152,10 @@ info:
       window: 300
       block: 300
   x-performance:
-    cache-ttl: 300
+    cache-ttl:
+      level1: 86400          # 24 hours
+      level2: 3600           # 1 hour
+      level3: 300            # 5 minutes
     timeout:
       sync: 30
       async: 3600

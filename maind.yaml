@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Meta Marketing API Connector
-  version: '1.4.0'
+  version: '1.5.0'
   description: |
     Meta Marketing API Connector for accessing campaign data and insights.
     API Version: v22.0
@@ -471,6 +471,129 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /campaigns/{campaign_id}/ads:
+    get:
+      operationId: getCampaignAds
+      summary: List ads in a campaign
+      description: |
+        Get a list of all ads and creatives in a specific campaign.
+        Required permissions: ads_management
+      tags:
+        - Ads & Creatives
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "120218493633420149"
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: "id,name,creative,type,thumbnail_url,clicks,ctr,conversions"
+        - name: limit
+          in: query
+          description: Number of records to return per request
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: after
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success. Returns a list of ads and their creatives
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Ad"
+                  paging:
+                    $ref: "#/components/schemas/Paging"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /creatives/{creative_id}/performance:
+    get:
+      operationId: getCreativePerformance
+      summary: Get creative performance metrics
+      description: |
+        Get detailed performance metrics for a specific creative.
+        Required permissions: ads_management
+      tags:
+        - Ads & Creatives
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: creative_id
+          in: path
+          required: true
+          description: Creative ID
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "120218493633420149"
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: "impressions,clicks,ctr,engagement_rate,video_views,conversions"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, this_month, last_month, this_quarter, lifetime, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d]
+            default: "last_30d"
+      responses:
+        '200':
+          description: Success. Returns performance metrics for the creative
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreativePerformance"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -784,3 +907,89 @@ components:
           description: The billing event type
           enum: [APP_INSTALLS, CLICKS, IMPRESSIONS, LINK_CLICKS, NONE, OFFER_CLAIMS, PAGE_LIKES, POST_ENGAGEMENT, THRUPLAY, PURCHASE]
           example: "IMPRESSIONS"
+
+    Ad:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Ad ID
+          example: "120218493633420149"
+        name:
+          type: string
+          description: Ad name
+          example: "Produto X - Vídeo Principal"
+        creative:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Creative ID
+              example: "120218493633420150"
+            title:
+              type: string
+              description: Creative title
+              example: "Conheça o Produto X"
+            body:
+              type: string
+              description: Creative body text
+              example: "Descubra como o Produto X pode transformar sua vida!"
+        type:
+          type: string
+          description: Ad type
+          enum: [IMAGE, VIDEO, CAROUSEL, COLLECTION]
+          example: "VIDEO"
+        thumbnail_url:
+          type: string
+          description: URL of the ad thumbnail
+          example: "https://scontent.xx.fbcdn.net/v/example.jpg"
+        clicks:
+          type: integer
+          description: Number of clicks
+          example: 1500
+        ctr:
+          type: number
+          description: Click-through rate (percentage)
+          example: 2.5
+        conversions:
+          type: integer
+          description: Number of conversions
+          example: 50
+
+    CreativePerformance:
+      type: object
+      properties:
+        impressions:
+          type: integer
+          description: Number of impressions
+          example: 50000
+        clicks:
+          type: integer
+          description: Number of clicks
+          example: 1500
+        ctr:
+          type: number
+          description: Click-through rate (percentage)
+          example: 2.5
+        engagement_rate:
+          type: number
+          description: Engagement rate (percentage)
+          example: 4.2
+        video_views:
+          type: integer
+          description: Number of video views (for video ads)
+          example: 25000
+        conversions:
+          type: integer
+          description: Number of conversions
+          example: 50
+        date_start:
+          type: string
+          format: date
+          description: Start date of the performance period
+          example: "2025-02-13"
+        date_stop:
+          type: string
+          format: date
+          description: End date of the performance period
+          example: "2025-03-13"

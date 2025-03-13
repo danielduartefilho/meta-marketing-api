@@ -147,8 +147,33 @@ class MetaAPITester:
                         }
                     )
                 
-                # 6. Insights
-                print("\n6. Testando insights")
+                # 6. Listar anúncios da campanha
+                print("\n6. Testando listagem de anúncios")
+                ads = self.test_endpoint(
+                    f"/campaigns/{campaign_id}/ads",
+                    params={
+                        "fields": "id,name,creative,type,thumbnail_url,clicks,ctr,conversions",
+                        "limit": 25
+                    }
+                )
+                
+                if ads and "data" in ads and ads["data"]:
+                    ad = ads["data"][0]
+                    if "creative" in ad and "id" in ad["creative"]:
+                        creative_id = ad["creative"]["id"]
+                        
+                        # 7. Métricas de performance do criativo
+                        print("\n7. Testando métricas do criativo")
+                        self.test_endpoint(
+                            f"/creatives/{creative_id}/performance",
+                            params={
+                                "fields": "impressions,clicks,ctr,engagement_rate,video_views,conversions",
+                                "date_preset": "last_30d"
+                            }
+                        )
+                
+                # 8. Insights da campanha
+                print("\n8. Testando insights")
                 self.test_endpoint(
                     f"/act_{account_id}/insights",
                     params={

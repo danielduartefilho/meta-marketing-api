@@ -460,7 +460,180 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{account_id}/insights/budget:
+  /act_{account_id}/insights/demographics:
+    get:
+      operationId: getDemographicInsights
+      summary: Get demographic performance analysis
+      description: |
+        Get performance metrics broken down by age, gender and device.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "impressions,spend,ctr,cpc,cpm,actions"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
+            default: "last_7d"
+        - name: level
+          in: query
+          description: Level of aggregation for the data
+          schema:
+            type: string
+            enum: [account, campaign, adset, ad]
+            default: "campaign"
+        - name: breakdowns
+          in: query
+          description: Demographic breakdowns (cannot be combined with action_type)
+          schema:
+            type: string
+            default: "age,gender,device_platform"
+      responses:
+        '200':
+          description: Success. Returns demographic insights
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemographicInsights"
+
+  /act_{account_id}/insights/conversions:
+    get:
+      operationId: getConversionInsights
+      summary: Get conversion performance analysis
+      description: |
+        Get conversion metrics broken down by action type and device.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "impressions,spend,ctr,cpc,cpm,actions"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
+            default: "last_7d"
+        - name: level
+          in: query
+          description: Level of aggregation for the data
+          schema:
+            type: string
+            enum: [account, campaign, adset, ad]
+            default: "campaign"
+        - name: breakdowns
+          in: query
+          description: Action type breakdown (can be combined with device_platform)
+          schema:
+            type: string
+            default: "action_type,device_platform"
+      responses:
+        '200':
+          description: Success. Returns conversion insights
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversionInsights"
+
+  /act_{account_id}/ads/performance:
+    get:
+      operationId: getAdsPerformance
+      summary: Get ads performance and creative analysis
+      description: |
+        Get detailed performance metrics for ads including creative performance.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "id,name,creative,spend,impressions,ctr,cpc,actions"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
+            default: "last_7d"
+      responses:
+        '200':
+          description: Success. Returns ads performance metrics
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdsPerformance"
+
+  /act_{account_id}/budget:
     get:
       operationId: getBudgetInsights
       summary: Get budget and ROI analysis
@@ -1452,3 +1625,166 @@ components:
                           type: string
                           description: Estimated impact
                           example: "HIGH"
+
+    DemographicInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              impressions:
+                type: string
+                description: Number of impressions
+                example: "50000"
+              spend:
+                type: string
+                description: Amount spent
+                example: "1147.20"
+              ctr:
+                type: string
+                description: Click-through rate
+                example: "1.52"
+              cpc:
+                type: string
+                description: Cost per click
+                example: "1.08"
+              cpm:
+                type: string
+                description: Cost per 1000 impressions
+                example: "22.94"
+              actions:
+                type: string
+                description: Total number of actions
+                example: "760"
+              age:
+                type: string
+                description: Age range
+                example: "25-34"
+              gender:
+                type: string
+                description: Gender
+                example: "female"
+              device_platform:
+                type: string
+                description: Device type
+                example: "mobile"
+              date_start:
+                type: string
+                format: date
+                example: "2025-03-06"
+              date_stop:
+                type: string
+                format: date
+                example: "2025-03-12"
+
+    ConversionInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              impressions:
+                type: string
+                description: Number of impressions
+                example: "50000"
+              spend:
+                type: string
+                description: Amount spent
+                example: "1147.20"
+              ctr:
+                type: string
+                description: Click-through rate
+                example: "1.52"
+              cpc:
+                type: string
+                description: Cost per click
+                example: "1.08"
+              cpm:
+                type: string
+                description: Cost per 1000 impressions
+                example: "22.94"
+              action_type:
+                type: string
+                description: Type of action
+                example: "onsite_conversion.lead"
+              value:
+                type: string
+                description: Number of actions
+                example: "26"
+              device_platform:
+                type: string
+                description: Device type
+                example: "mobile"
+              date_start:
+                type: string
+                format: date
+                example: "2025-03-06"
+              date_stop:
+                type: string
+                format: date
+                example: "2025-03-12"
+
+    AdsPerformance:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Ad ID
+                example: "120218493633420149"
+              name:
+                type: string
+                description: Ad name
+                example: "Summer Sale Video"
+              creative:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Creative ID
+                    example: "120218493633420150"
+                  name:
+                    type: string
+                    description: Creative name
+                    example: "Summer Sale Video Creative"
+                  type:
+                    type: string
+                    description: Creative type
+                    example: "video"
+              spend:
+                type: string
+                description: Amount spent
+                example: "573.60"
+              impressions:
+                type: string
+                description: Number of impressions
+                example: "25000"
+              ctr:
+                type: string
+                description: Click-through rate
+                example: "2.3"
+              cpc:
+                type: string
+                description: Cost per click
+                example: "1.45"
+              actions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: Type of action
+                      example: "video_view"
+                    value:
+                      type: string
+                      description: Number of actions
+                      example: "16618"

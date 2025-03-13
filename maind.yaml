@@ -265,6 +265,116 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /act_{account_id}/adsets:
+    get:
+      operationId: getAdSets
+      summary: List ad sets
+      description: |
+        Get a list of all ad sets in the specified ad account.
+        Required permissions: ads_management
+      tags:
+        - Ad Sets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: "id,name,status,campaign_id,daily_budget,lifetime_budget"
+        - name: limit
+          in: query
+          description: Number of records to return per request
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: after
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success. Returns a list of ad sets
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdSetList"
+              example:
+                data:
+                  - id: "23850123640320149"
+                    name: "Website Traffic - Desktop"
+                    status: "ACTIVE"
+                    campaign_id: "120218493633420149"
+                    daily_budget: 5000
+                    lifetime_budget: 50000
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /{adset_id}:
+    get:
+      operationId: getAdSetById
+      summary: Get ad set details
+      description: |
+        Get detailed information about a specific ad set.
+        Required permissions: ads_management
+      tags:
+        - Ad Sets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: adset_id
+          in: path
+          required: true
+          description: Ad set ID (get this from /adsets endpoint)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "23850123640320149"
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event"
+      responses:
+        '200':
+          description: Success. Returns detailed ad set information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdSet"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /act_{account_id}/insights:
     get:
       operationId: getAccountInsights
@@ -397,122 +507,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LookalikeAudienceInsights"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /{adset_id}:
-    get:
-      operationId: getAdSetById
-      summary: Get ad set details
-      description: |
-        Get detailed information about a specific ad set.
-        Required permissions: ads_management
-      tags:
-        - Ad Sets
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: adset_id
-          in: path
-          required: true
-          description: Ad set ID
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "23850123640320149"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event"
-      responses:
-        '200':
-          description: Success. Returns detailed ad set information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdSet"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/adsets:
-    get:
-      operationId: getAdSets
-      summary: List ad sets
-      description: |
-        Get a list of all ad sets in the specified ad account.
-        Required permissions: ads_management
-      tags:
-        - Ad Sets
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event"
-        - name: breakdowns
-          in: query
-          description: Comma-separated list of breakdown dimensions
-          schema:
-            type: string
-            enum: [age, gender, region]
-            default: "age,gender,region"
-        - name: limit
-          in: query
-          description: Number of records to return per request
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 25
-        - name: after
-          in: query
-          description: Cursor for pagination
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success. Returns a list of ad sets
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/AdSet"
-                  paging:
-                    $ref: "#/components/schemas/Paging"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -880,6 +874,16 @@ components:
             after:
               type: string
 
+    AdSetList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdSet"
+        paging:
+          $ref: "#/components/schemas/Paging"
+
     AdSet:
       type: object
       properties:
@@ -891,6 +895,23 @@ components:
           type: string
           description: Ad set name
           example: "Lookalike Audience - São Paulo"
+        status:
+          type: string
+          description: Ad set status
+          enum: [ACTIVE, PAUSED, ARCHIVED, DELETED]
+          example: "ACTIVE"
+        campaign_id:
+          type: string
+          description: Campaign ID
+          example: "120218493633420149"
+        daily_budget:
+          type: integer
+          description: Daily budget in account currency (x100)
+          example: 5000
+        lifetime_budget:
+          type: integer
+          description: Lifetime budget in account currency (x100)
+          example: 50000
         targeting:
           type: object
           description: Targeting specifications
@@ -940,19 +961,6 @@ components:
                     type: string
                   name:
                     type: string
-        daily_budget:
-          type: integer
-          description: Daily budget in account currency (x100)
-          example: 5000
-        lifetime_budget:
-          type: integer
-          description: Lifetime budget in account currency (x100)
-          example: 50000
-        status:
-          type: string
-          description: Ad set status
-          enum: [ACTIVE, PAUSED, ARCHIVED, DELETED]
-          example: "ACTIVE"
         bid_strategy:
           type: string
           description: Bidding strategy

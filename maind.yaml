@@ -245,9 +245,8 @@ paths:
       operationId: getCampaigns
       summary: List campaigns
       description: |
-        Get a list of all campaigns for ad account 906594379912215.
+        Get a list of all campaigns for the specified ad account.
         Required permissions: ads_management
-        Note: Use account_id without 'act_' prefix, it will be added automatically in the URL
       tags:
         - Campaigns
       security:
@@ -256,7 +255,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (without 'act_' prefix, it will be added automatically)
+          description: Ad account ID (numeric ID only)
           schema:
             type: string
             pattern: '^\d+$'
@@ -297,7 +296,7 @@ paths:
                 $ref: "#/components/schemas/CampaignList"
               example:
                 data:
-                  - id: "23847392874"
+                  - id: "120218493633420149"
                     name: "Website Traffic Campaign"
                     status: "ACTIVE"
                     objective: "LINK_CLICKS"
@@ -315,7 +314,6 @@ paths:
       description: |
         Get detailed information about a specific campaign.
         Required permissions: ads_management
-        Note: Use campaign_id without account prefix
       tags:
         - Campaigns
       security:
@@ -324,7 +322,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (without 'act_' prefix, it will be added automatically)
+          description: Ad account ID (numeric ID only)
           schema:
             type: string
             pattern: '^\d+$'
@@ -332,11 +330,11 @@ paths:
         - name: campaign_id
           in: path
           required: true
-          description: Campaign ID (without account prefix)
+          description: Campaign ID (numeric ID only)
           schema:
             type: string
             pattern: '^\d+$'
-            example: "23847392874"
+            example: "120218493633420149"
         - name: fields
           in: query
           required: true
@@ -352,7 +350,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Campaign"
               example:
-                id: "23847392874"
+                id: "120218493633420149"
                 name: "Website Traffic Campaign"
                 status: "ACTIVE"
                 objective: "LINK_CLICKS"
@@ -373,7 +371,6 @@ paths:
       description: |
         Get performance metrics for a specific campaign.
         Required permissions: ads_read
-        Note: Use campaign_id without account prefix
       tags:
         - Insights
       security:
@@ -382,7 +379,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (without 'act_' prefix, it will be added automatically)
+          description: Ad account ID (numeric ID only)
           schema:
             type: string
             pattern: '^\d+$'
@@ -390,11 +387,11 @@ paths:
         - name: campaign_id
           in: path
           required: true
-          description: Campaign ID (without account prefix)
+          description: Campaign ID (numeric ID only)
           schema:
             type: string
             pattern: '^\d+$'
-            example: "23847392874"
+            example: "120218493633420149"
         - name: fields
           in: query
           required: true
@@ -448,7 +445,7 @@ paths:
                 data:
                   - date_start: "2025-03-01"
                     date_end: "2025-03-01"
-                    campaign_id: "23847392874"
+                    campaign_id: "120218493633420149"
                     impressions: 1234
                     reach: 987
                     spend: 50.25

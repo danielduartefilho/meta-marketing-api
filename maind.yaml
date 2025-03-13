@@ -291,7 +291,7 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /{ad_account_id}/campaigns:
+  /act_{ad_account_id}/campaigns:
     get:
       operationId: getCampaigns
       summary: List campaigns
@@ -359,7 +359,7 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /{ad_account_id}/campaigns/{campaign_id}:
+  /act_{ad_account_id}/campaigns/{campaign_id}:
     get:
       operationId: getCampaignById
       summary: Get campaign details
@@ -417,7 +417,7 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /{ad_account_id}/insights:
+  /act_{ad_account_id}/insights:
     get:
       operationId: getCampaignInsights
       summary: Get campaign insights

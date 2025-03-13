@@ -197,130 +197,6 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{account_id}/insights:
-    get:
-      operationId: getCampaignDemographics
-      summary: Get campaign demographic data
-      description: |
-        Get demographic breakdown and performance metrics for campaigns.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Audience Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: level
-          in: query
-          required: true
-          description: Level of data aggregation
-          schema:
-            type: string
-            enum: [campaign, adset, ad]
-            default: "campaign"
-        - name: filtering
-          in: query
-          required: true
-          description: Filter by campaign, ad set or ad ID
-          schema:
-            type: string
-            example: '[{"field":"campaign.id","operator":"EQUAL","value":"120218493633420149"}]'
-        - name: breakdowns
-          in: query
-          required: true
-          description: Demographic breakdowns to analyze
-          schema:
-            type: string
-            default: "age,gender,country,region"
-        - name: fields
-          in: query
-          required: true
-          description: Metrics to return
-          schema:
-            type: string
-            default: "reach,impressions,actions"
-      responses:
-        '200':
-          description: Success. Returns demographic insights
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AudienceInsights"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/customaudiences:
-    get:
-      operationId: getCustomAudienceDetails
-      summary: Get custom audience details
-      description: |
-        Get details and performance metrics for custom and lookalike audiences.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Audience Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "id,name,subtype,approximate_count,delivery_status,lookalike_spec,time_created,time_updated,operation_status"
-        - name: filtering
-          in: query
-          description: Filter by audience ID
-          schema:
-            type: string
-            example: '[{"field":"id","operator":"EQUAL","value":"120210538460040149"}]'
-      responses:
-        '200':
-          description: Success. Returns audience details and metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LookalikeAudienceInsights"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
   /act_{account_id}/campaigns:
     get:
       operationId: getCampaigns
@@ -382,6 +258,147 @@ paths:
                     name: "Website Traffic Campaign"
                     status: "ACTIVE"
                     objective: "LINK_CLICKS"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/insights:
+    get:
+      operationId: getAccountInsights
+      summary: Get insights data
+      description: |
+        Get performance metrics filtered by campaign, ad set, or ad. Use level parameter to specify data granularity and filtering to target specific items.
+        Examples: level=ad&filtering=[{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
+        Required permissions: ads_management
+      tags:
+        - Insights
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only, without act_ prefix)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: level
+          in: query
+          required: true
+          description: Level of insights data to return
+          schema:
+            type: string
+            enum: [account, campaign, adset, ad]
+            default: "account"
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, this_month, last_month, this_quarter, lifetime, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d]
+            default: "last_7d"
+        - name: filtering
+          in: query
+          description: JSON array of filter objects to apply
+          schema:
+            type: string
+            example: '[{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]'
+        - name: breakdowns
+          in: query
+          description: Demographic breakdowns to analyze (for audience insights)
+          schema:
+            type: string
+            example: "age,gender,country,region"
+      responses:
+        '200':
+          description: Success. Returns insights data for the specified level
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: "#/components/schemas/InsightData"
+                        - $ref: "#/components/schemas/AudienceInsights"
+                  paging:
+                    $ref: "#/components/schemas/Paging"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/customaudiences/{audience_id}:
+    get:
+      operationId: getLookalikeAudienceInsights
+      summary: Get lookalike audience insights
+      description: |
+        Get performance metrics for a lookalike audience.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Insights
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: audience_id
+          in: path
+          required: true
+          description: Lookalike audience ID
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "120208690219500149"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "id,name,subtype,approximate_count,delivery_status,lookalike_spec"
+      responses:
+        '200':
+          description: Success. Returns audience details and metrics
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookalikeAudienceInsights"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -578,118 +595,6 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{account_id}/campaigns/{campaign_id}/audience_insights:
-    get:
-      operationId: getCampaignAudienceInsights
-      summary: Get campaign audience insights
-      description: |
-        Get detailed demographic insights for a campaign audience.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Audience Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: campaign_id
-          in: path
-          required: true
-          description: Campaign ID to get audience insights for
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "120218493633420149"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "age,gender,location,reach,impressions,conversions"
-      responses:
-        '200':
-          description: Success. Returns demographic insights for the campaign
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AudienceInsights"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/audiences/lookalike/{audience_id}:
-    get:
-      operationId: getLookalikeAudienceInsights
-      summary: Get lookalike audience insights
-      description: |
-        Get performance metrics for a lookalike audience.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Audience Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: audience_id
-          in: path
-          required: true
-          description: Lookalike audience ID
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "120208690219500149"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "source_audience,size,reach,performance"
-      responses:
-        '200':
-          description: Success. Returns insights for the lookalike audience
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LookalikeAudienceInsights"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
 components:
   securitySchemes:
     bearerAuth:
@@ -869,6 +774,66 @@ components:
           format: date
           description: End date of the insights period
           example: "2025-03-12"
+
+    AudienceInsights:
+      type: object
+      properties:
+        age_distribution:
+          type: array
+          description: Age distribution of the audience
+          items:
+            type: object
+            properties:
+              age:
+                type: string
+                description: Age range
+                example: "25-34"
+              percentage:
+                type: number
+                description: Percentage of the audience in this age range
+                example: 0.34
+        gender_distribution:
+          type: array
+          description: Gender distribution of the audience
+          items:
+            type: object
+            properties:
+              gender:
+                type: string
+                description: Gender
+                example: "male"
+              percentage:
+                type: number
+                description: Percentage of the audience with this gender
+                example: 0.56
+        country_distribution:
+          type: array
+          description: Country distribution of the audience
+          items:
+            type: object
+            properties:
+              country:
+                type: string
+                description: Country code
+                example: "US"
+              percentage:
+                type: number
+                description: Percentage of the audience in this country
+                example: 0.23
+        region_distribution:
+          type: array
+          description: Region distribution of the audience
+          items:
+            type: object
+            properties:
+              region:
+                type: string
+                description: Region name
+                example: "California"
+              percentage:
+                type: number
+                description: Percentage of the audience in this region
+                example: 0.17
 
     PageAccountList:
       type: object
@@ -1054,176 +1019,50 @@ components:
           description: URL to preview the ad
           example: "https://www.facebook.com/ads/archive/render_ad/123456789"
 
-    CreativePerformance:
-      type: object
-      properties:
-        impressions:
-          type: integer
-          description: Number of impressions
-          example: 50000
-        inline_link_clicks:
-          type: integer
-          description: Number of clicks on links within the ad
-          example: 1500
-        inline_link_click_ctr:
-          type: number
-          description: Click-through rate for links within the ad (percentage)
-          example: 2.5
-        actions:
-          type: array
-          description: Array of actions taken on the ad
-          items:
-            type: object
-            properties:
-              action_type:
-                type: string
-                description: Type of action
-                example: "post_engagement"
-              value:
-                type: integer
-                description: Number of actions
-                example: 250
-        video_p25_watched_actions:
-          type: array
-          description: Number of times video was watched to 25%
-          items:
-            type: object
-            properties:
-              value:
-                type: integer
-                example: 40000
-        video_p50_watched_actions:
-          type: array
-          description: Number of times video was watched to 50%
-          items:
-            type: object
-            properties:
-              value:
-                type: integer
-                example: 30000
-        video_p75_watched_actions:
-          type: array
-          description: Number of times video was watched to 75%
-          items:
-            type: object
-            properties:
-              value:
-                type: integer
-                example: 20000
-        video_p95_watched_actions:
-          type: array
-          description: Number of times video was watched to 95%
-          items:
-            type: object
-            properties:
-              value:
-                type: integer
-                example: 15000
-        video_p100_watched_actions:
-          type: array
-          description: Number of times video was watched to completion
-          items:
-            type: object
-            properties:
-              value:
-                type: integer
-                example: 10000
-        date_start:
-          type: string
-          format: date
-          description: Start date of the performance period
-          example: "2025-02-13"
-        date_stop:
-          type: string
-          format: date
-          description: End date of the performance period
-          example: "2025-03-13"
-
-    AudienceInsights:
-      type: object
-      properties:
-        age:
-          type: object
-          properties:
-            min:
-              type: integer
-              description: Minimum age
-              example: 25
-            max:
-              type: integer
-              description: Maximum age
-              example: 55
-        gender:
-          type: array
-          description: Array of genders
-          items:
-            type: string
-            enum: ["male", "female"]
-        location:
-          type: object
-          properties:
-            country:
-              type: string
-              description: Country
-              example: "Brazil"
-            region:
-              type: string
-              description: Region
-              example: "São Paulo"
-        reach:
-          type: integer
-          description: Number of people who saw the ads
-          example: 589
-        impressions:
-          type: integer
-          description: Number of impressions
-          example: 631
-        conversions:
-          type: integer
-          description: Number of conversions
-          example: 250
-
     LookalikeAudienceInsights:
       type: object
       properties:
-        source_audience:
+        id:
           type: string
-          description: Source audience ID
+          description: Lookalike audience ID
           example: "120208690219500149"
-        size:
+        name:
+          type: string
+          description: Lookalike audience name
+          example: "Lookalike Audience - São Paulo"
+        subtype:
+          type: string
+          description: Lookalike audience subtype
+          example: "similarity"
+        approximate_count:
           type: integer
-          description: Audience size
-          example: 100000
-        reach:
-          type: integer
-          description: Number of people who saw the ads
-          example: 589
-        performance:
+          description: Approximate number of people in the audience
+          example: 1000000
+        delivery_status:
+          type: string
+          description: Delivery status of the audience
+          enum: [ACTIVE, PAUSED, DELETED, ARCHIVED]
+          example: "ACTIVE"
+        lookalike_spec:
           type: object
+          description: Lookalike audience specification
           properties:
-            spend:
+            seed_audience:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Seed audience ID
+                  example: "120208690219500149"
+                name:
+                  type: string
+                  description: Seed audience name
+                  example: "Seed Audience - São Paulo"
+            ratio:
+              type: integer
+              description: Ratio of the lookalike audience
+              example: 1
+            target_country:
               type: string
-              description: Amount spent in the account currency
-              example: "15.95"
-            inline_link_clicks:
-              type: string
-              description: Number of clicks on links within the ad
-              example: "42"
-            inline_link_click_ctr:
-              type: string
-              description: Click-through rate for links within the ad (percentage)
-              example: "6.66"
-            actions:
-              type: array
-              description: Array of actions taken on the ad
-              items:
-                type: object
-                properties:
-                  action_type:
-                    type: string
-                    description: Type of action
-                    example: "post_engagement"
-                  value:
-                    type: string
-                    description: Number of actions
-                    example: "250"
+              description: Target country for the lookalike audience
+              example: "BR"

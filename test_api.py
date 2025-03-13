@@ -3,12 +3,16 @@ import requests
 import json
 from datetime import datetime
 from typing import Dict, Optional, Any
+import sys
 
 class MetaAPITester:
     def __init__(self):
         self.base_url = "https://graph.facebook.com/v22.0"
         self.access_token = os.getenv("META_ACCESS_TOKEN")
-        self.headers = {"Authorization": f"Bearer {self.access_token}"}
+        self.headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
         self.rate_limits = {
             "points": 0,
             "total": 9000,
@@ -88,6 +92,31 @@ class MetaAPITester:
         print("=== Iniciando testes da API ===")
         print(f"Data/Hora: {datetime.now()}")
         print(f"Versão da API: v22.0")
+        
+        # 1. Test page access
+        print("\n1. Testando acesso às páginas")
+        print("\n=== Testando GET /me/accounts ===")
+        
+        accounts_response = requests.get(
+            f"{self.base_url}/me/accounts",
+            headers=self.headers
+        )
+        
+        print(f"Status: {accounts_response.status_code}")
+        print(f"Tempo de resposta: {accounts_response.elapsed.total_seconds():.3f}s")
+        
+        if accounts_response.status_code == 200:
+            accounts_data = accounts_response.json()
+            if accounts_data.get("data"):
+                print(f"\nPáginas encontradas: {len(accounts_data['data'])}")
+                for page in accounts_data["data"]:
+                    print(f"- {page.get('name')} (ID: {page.get('id')})")
+                    print(f"  Tarefas disponíveis: {', '.join(page.get('tasks', []))}")
+            else:
+                print("Nenhuma página encontrada")
+        else:
+            print(f"Erro: {accounts_response.status_code}")
+            print(accounts_response.text)
         
         # 1. Listar contas de anúncio
         print("\n1. Testando listagem de contas")
@@ -193,10 +222,92 @@ class MetaAPITester:
                         }])
                     }
                 )
+                
+                # 9. Testando trends de performance
+                print("\n9. Testando trends de performance")
+                print("\n=== Testando GET /act_906594379912215/trends/performance ===")
+                
+                trends_response = requests.get(
+                    f"{self.base_url}/act_906594379912215/trends/performance",
+                    headers=self.headers,
+                    params={
+                        "date_preset": "last_30d"
+                    }
+                )
+                
+                print(f"Status: {trends_response.status_code}")
+                print(f"Tempo de resposta: {trends_response.elapsed.total_seconds():.3f}s")
+                print(f"Rate limit usado: {trends_response.headers.get('X-Business-Use-Case-Usage', '0/9000')}")
+                print(f"Cache hit: {'Sim' if trends_response.headers.get('X-FB-Debug-Cache', 'miss') == 'hit' else 'Não'}")
+                
+                if trends_response.status_code == 200:
+                    trends_data = trends_response.json()
+                    print("\nTrends encontrados:")
+                    if trends_data.get("data"):
+                        if trends_data["data"].get("best_performing_creatives"):
+                            print(f"- {len(trends_data['data']['best_performing_creatives'])} criativos de melhor performance")
+                        if trends_data["data"].get("best_performing_audiences"):
+                            print(f"- {len(trends_data['data']['best_performing_audiences'])} segmentos de público de melhor performance")
+                        if trends_data["data"].get("campaigns_to_optimize"):
+                            print(f"- {len(trends_data['data']['campaigns_to_optimize'])} campanhas para otimizar")
+                    else:
+                        print("Nenhum trend encontrado no período")
+                else:
+                    print(f"Erro: {trends_response.status_code}")
+                    print(trends_response.text)
+
+def validate_token():
+    """Validate if token has required permissions"""
+    try:
+        response = requests.get(
+            "https://graph.facebook.com/v22.0/me/permissions",
+            headers={"Authorization": f"Bearer {os.getenv('META_ACCESS_TOKEN')}"}
+        )
+        if response.status_code == 200:
+            permissions = response.json().get("data", [])
+            required = {
+                "ads_management", 
+                "ads_read",
+                "pages_show_list",
+                "pages_read_engagement"
+            }
+            granted = {p["permission"] for p in permissions if p["status"] == "granted"}
+            missing = required - granted
+            if missing:
+                print("\nERRO: Token não tem todas as permissões necessárias.")
+                print(f"Permissões faltando: {missing}")
+                print("\nPermissões concedidas:")
+                for p in granted:
+                    print(f"- {p}")
+                return False
+            print("\nPermissões validadas com sucesso:")
+            for p in granted:
+                print(f"- {p}")
+            return True
+        else:
+            print(f"\nERRO: Token inválido ou expirado (Status: {response.status_code})")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"\nERRO ao validar token: {str(e)}")
+        return False
 
 if __name__ == "__main__":
+    print("=== Iniciando testes da API ===")
+    print(f"Data/Hora: {datetime.now()}")
+    print(f"Versão da API: v22.0")
+    
     if not os.getenv("META_ACCESS_TOKEN"):
-        print("Erro: Configure a variável de ambiente META_ACCESS_TOKEN")
-    else:
+        print("\nERRO: Token de acesso não encontrado!")
+        print("Defina a variável de ambiente META_ACCESS_TOKEN")
+        sys.exit(1)
+    
+    if not validate_token():
+        sys.exit(1)
+        
+    try:
         tester = MetaAPITester()
         tester.run_tests()
+    except Exception as e:
+        print(f"\nERRO durante os testes: {str(e)}")
+        sys.exit(1)

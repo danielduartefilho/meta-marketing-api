@@ -1,10 +1,20 @@
 openapi: 3.1.0
 info:
-  title: Meta Marketing API Connector
-  version: 1.4.0
+  title: Meta Marketing API
+  version: '22.0'
   description: |
-    Conector para a API de Marketing do Meta (Facebook), versão v22.0.
-    Fornece acesso a dados de campanhas, conjuntos de anúncios, anúncios e métricas de performance.
+    API para gerenciamento de campanhas e anúncios no Meta Marketing.
+    
+    Permissões necessárias:
+    - ads_management: Gerenciamento de anúncios e campanhas
+    - ads_read: Leitura de métricas e insights
+    - pages_show_list: Listagem de páginas gerenciadas
+    - pages_read_engagement: Acesso a dados de engajamento
+    
+    Autenticação:
+    1. Obtenha um token de acesso com as permissões necessárias
+    2. Use o token no header Authorization: Bearer {token}
+    3. Para operações em páginas, use pages_show_list e pages_read_engagement
 
 servers:
   - url: https://graph.facebook.com/v22.0
@@ -64,83 +74,49 @@ paths:
 
   /me/accounts:
     get:
-      operationId: getPageAccounts
-      summary: Get page accounts
+      operationId: getAccounts
+      summary: Get managed pages
       description: |
-        List available pages with engagement metrics.
-        Called internally to get page ID 102264027940184.
+        Get list of pages that the user manages.
         Required permissions: pages_show_list, pages_read_engagement
       tags:
-        - Authentication
+        - Pages
       security:
         - bearerAuth: []
-      parameters:
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "id,name,category,category_list,tasks,engagement{count_lifetime},posts.limit(1){insights},feed{likes,comments}"
       responses:
         '200':
-          description: Success. Returns page list with metrics
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              schema:
-                type: string
-                default: "private, max-age=86400"
+          description: Success. Returns list of managed pages
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PageAccountList"
-              example:
-                data:
-                  - id: "102264027940184"
-                    name: "Test Page"
-                    category: "Business"
-                    category_list: [
-                      {
-                        "id": "2500",
-                        "name": "Business Service"
-                      }
-                    ]
-                    tasks: [
-                      "CREATE_CONTENT",
-                      "MODERATE",
-                      "READ_INSIGHTS"
-                    ]
-                    engagement: {
-                      "count_lifetime": 1234
-                    }
-                    posts: {
-                      "data": [
-                        {
-                          "id": "102264027940184_123456789",
-                          "insights": {
-                            "data": [
-                              {
-                                "name": "post_impressions",
-                                "period": "lifetime",
-                                "values": [{"value": 5678}]
-                              }
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                    feed: {
-                      "data": [
-                        {
-                          "likes": {"summary": {"total_count": 42}},
-                          "comments": {"summary": {"total_count": 7}}
-                        }
-                      ]
-                    }
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Page ID
+                          example: "123456789"
+                        name:
+                          type: string
+                          description: Page name
+                          example: "My Business Page"
+                        access_token:
+                          type: string
+                          description: Page access token (only with pages_read_engagement)
+                        category:
+                          type: string
+                          description: Page category
+                          example: "Local Business"
+                        tasks:
+                          type: array
+                          description: Available tasks based on permissions
+                          items:
+                            type: string
+                            enum: [ANALYZE, CREATE_CONTENT, MODERATE, ADVERTISE]
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -788,8 +764,11 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        Access token obtained from Facebook OAuth 2.0.
-        Required scopes: ads_management, ads_read
+        Token de acesso do Meta com as permissões:
+        - ads_management
+        - ads_read
+        - pages_show_list
+        - pages_read_engagement
 
   headers:
     BusinessUseCaseUsage:

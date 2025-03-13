@@ -739,12 +739,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/PerformanceInsights"
 
-  /act_{account_id}/trends:
+  /act_{account_id}/trends/performance:
     get:
       operationId: getAccountTrends
-      summary: Get account trends and recommendations
+      summary: Get account performance trends and recommendations
       description: |
-        Get trends analysis and optimization recommendations for the ad account.
+        Get trends analysis using a combination of ads and insights data.
         Required permissions: ads_management, ads_read
       tags:
         - Analytics
@@ -759,13 +759,6 @@ paths:
             type: string
             pattern: '^\d+$'
             example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "best_performing_creatives,best_performing_audiences,campaigns_to_optimize"
         - name: date_preset
           in: query
           description: Predefined date range for the data
@@ -775,7 +768,7 @@ paths:
             default: "last_30d"
       responses:
         '200':
-          description: Success. Returns trends and recommendations
+          description: Success. Returns trends and recommendations based on ads and insights data
           headers:
             X-Business-Use-Case-Usage:
               $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -786,7 +779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountTrends"
+                $ref: "#/components/schemas/AccountTrendsPerformance"
 
 components:
   securitySchemes:
@@ -1484,6 +1477,187 @@ components:
                           type: string
                           description: Estimated impact
                           example: "HIGH"
+                        metrics_to_improve:
+                          type: array
+                          items:
+                            type: string
+                          example: ["cpc", "ctr", "cost_per_action"]
+
+    AccountTrendsPerformance:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            best_performing_creatives:
+              type: array
+              description: Best performing ads based on creative performance
+              items:
+                type: object
+                properties:
+                  ad_id:
+                    type: string
+                    description: Ad ID
+                    example: "120218493633420149"
+                  name:
+                    type: string
+                    description: Ad name
+                    example: "Summer Sale Video"
+                  creative:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Creative ID
+                        example: "120218493633420150"
+                      name:
+                        type: string
+                        description: Creative name
+                        example: "Summer Sale Video Creative"
+                      type:
+                        type: string
+                        description: Creative type
+                        example: "video"
+                  performance_metrics:
+                    type: object
+                    properties:
+                      spend:
+                        type: string
+                        description: Amount spent
+                        example: "573.60"
+                      impressions:
+                        type: string
+                        description: Number of impressions
+                        example: "25000"
+                      ctr:
+                        type: string
+                        description: Click-through rate
+                        example: "2.3"
+                      cpc:
+                        type: string
+                        description: Cost per click
+                        example: "1.45"
+                      actions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            action_type:
+                              type: string
+                              description: Type of action
+                              example: "video_view"
+                            value:
+                              type: string
+                              description: Number of actions
+                              example: "16618"
+            best_performing_audiences:
+              type: array
+              description: Best performing audience segments based on demographic insights
+              items:
+                type: object
+                properties:
+                  segment:
+                    type: object
+                    properties:
+                      age:
+                        type: string
+                        description: Age range
+                        example: "25-34"
+                      gender:
+                        type: string
+                        description: Gender
+                        example: "female"
+                      device_platform:
+                        type: string
+                        description: Device type
+                        example: "mobile"
+                  performance_metrics:
+                    type: object
+                    properties:
+                      impressions:
+                        type: string
+                        description: Number of impressions
+                        example: "50000"
+                      reach:
+                        type: string
+                        description: Number of unique users reached
+                        example: "30000"
+                      spend:
+                        type: string
+                        description: Amount spent
+                        example: "1147.20"
+                      ctr:
+                        type: string
+                        description: Click-through rate
+                        example: "1.52"
+                      actions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            action_type:
+                              type: string
+                              description: Type of action
+                              example: "link_click"
+                            value:
+                              type: string
+                              description: Number of actions
+                              example: "2500"
+            campaigns_to_optimize:
+              type: array
+              description: Campaigns that need optimization based on performance metrics
+              items:
+                type: object
+                properties:
+                  campaign_id:
+                    type: string
+                    description: Campaign ID
+                    example: "120218493633420149"
+                  name:
+                    type: string
+                    description: Campaign name
+                    example: "Website Traffic Campaign"
+                  performance_metrics:
+                    type: object
+                    properties:
+                      spend:
+                        type: string
+                        description: Amount spent
+                        example: "5000.00"
+                      cpc:
+                        type: string
+                        description: Cost per click (high indicates inefficiency)
+                        example: "2.50"
+                      ctr:
+                        type: string
+                        description: Click-through rate (low indicates poor targeting/creative)
+                        example: "0.8"
+                      cost_per_action:
+                        type: string
+                        description: Cost per conversion (high indicates optimization needed)
+                        example: "45.00"
+                  optimization_recommendations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          description: Type of recommendation
+                          example: "BUDGET_OPTIMIZATION"
+                        description:
+                          type: string
+                          description: Detailed recommendation
+                          example: "Increase budget by 20% to capture more conversions"
+                        impact:
+                          type: string
+                          description: Estimated impact of the recommendation
+                          example: "HIGH"
+                        metrics_to_improve:
+                          type: array
+                          items:
+                            type: string
+                          example: ["cpc", "ctr", "cost_per_action"]
 
     DemographicInsights:
       type: object

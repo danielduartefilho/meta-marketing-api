@@ -417,7 +417,7 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{account_id}/campaigns/{campaign_id}/insights:
+  /act_{account_id}/insights:
     get:
       operationId: getCampaignInsights
       summary: Get campaign insights
@@ -438,14 +438,35 @@ paths:
             type: string
             pattern: '^\d+$'
             example: "906594379912215"
-        - name: campaign_id
-          in: path
+        - name: level
+          in: query
           required: true
-          description: Campaign ID
+          description: Level of insights data
           schema:
             type: string
-            pattern: '^\d+$'
-            example: "120218493633420149"
+            enum: ["campaign"]
+            default: "campaign"
+        - name: filtering
+          in: query
+          required: true
+          description: Filter to specific campaign
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                field:
+                  type: string
+                  enum: ["campaign.id"]
+                  default: "campaign.id"
+                operator:
+                  type: string
+                  enum: ["EQUAL"]
+                  default: "EQUAL"
+                value:
+                  type: string
+                  description: Campaign ID to filter by
+                  example: "120218493633420149"
         - name: fields
           in: query
           required: true

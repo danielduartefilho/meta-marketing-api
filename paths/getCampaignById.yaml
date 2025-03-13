@@ -1,5 +1,16 @@
-summary: Get campaign details
-description: Get detailed information about a specific campaign
+summary: Get campaign details and performance metrics
+description: |
+  Get detailed information and performance metrics for a specific campaign.
+  
+  Métricas Disponíveis:
+  - Básicas: impressions, reach, spend, clicks, ctr, cpc
+  - Vídeo: retenção (p25-p100), engajamento
+  - Performance: conversões, ROAS
+  
+  Melhores Práticas:
+  - Limite de 30 dias para análise
+  - Máximo 2-3 breakdowns
+  - Priorizar filtros por ID
 operationId: getCampaignById
 tags:
   - Campaigns
@@ -8,7 +19,7 @@ parameters:
     name: account_id
     in: path
     required: true
-    description: Ad account ID (act_906594379912215)
+    description: Ad account ID
     schema:
       type: string
       pattern: '^act_\d+$'
@@ -17,7 +28,7 @@ parameters:
     name: campaign_id
     in: path
     required: true
-    description: Campaign ID to retrieve details for
+    description: Campaign ID
     schema:
       type: string
       example: "23847392874"
@@ -32,10 +43,35 @@ parameters:
     name: fields
     in: query
     required: true
-    description: Comma-separated list of fields to return
+    description: |
+      Métricas disponíveis:
+      - Básicas: id, name, status, objective
+      - Performance: impressions, reach, spend, clicks
+      - Vídeo: video_p25_watched_actions...video_p100_watched_actions
+      - Engajamento: video_avg_time_watched_actions, video_play_actions
     schema:
       type: string
-      example: "id,name,status,objective"
+      example: "id,name,status,objective,impressions,reach"
+      default: "id,name,status,objective,impressions,reach"
+  date_preset:
+    name: date_preset
+    in: query
+    description: Limite de 30 dias conforme recomendação
+    schema:
+      type: string
+      enum: [today, yesterday, last_7d, last_30d]
+      default: "last_30d"
+  breakdowns:
+    name: breakdowns
+    in: query
+    description: |
+      Breakdowns Suportados (máximo 2-3):
+      - publisher_platform: facebook, instagram
+      - device_platform: desktop, mobile
+      - age, gender: Demografia
+    schema:
+      type: string
+      example: "publisher_platform,age"
 responses:
   '200':
     description: Success. Returns detailed campaign information

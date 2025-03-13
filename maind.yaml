@@ -270,15 +270,8 @@ paths:
       operationId: getAccountInsights
       summary: Get insights data
       description: |
-        Get detailed performance metrics for an ad account, filtered by campaign, ad set, or ad.
-        
-        Examples:
-        1. Get ad insights:
-           level=ad&filtering=[{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
-        
-        2. Get campaign insights:
-           level=campaign&filtering=[{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]
-        
+        Get performance metrics filtered by campaign, ad set, or ad. Use level parameter to specify data granularity and filtering to target specific items.
+        Examples: level=ad&filtering=[{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
         Required permissions: ads_management
       tags:
         - Insights

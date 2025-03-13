@@ -153,7 +153,7 @@ class MetaAPITester:
                     f"/act_{account_id}/ads",
                     params={
                         "campaign_id": campaign_id,
-                        "fields": "id,name,creative,type,thumbnail_url,clicks,ctr,conversions",
+                        "fields": "id,name,creative{id,title,body,image_url,video_id,thumbnail_url},status,effective_status,preview_shareable_link",
                         "limit": 25
                     }
                 )
@@ -168,7 +168,7 @@ class MetaAPITester:
                         self.test_endpoint(
                             f"/{creative_id}/insights",
                             params={
-                                "fields": "impressions,clicks,ctr,engagement_rate,video_views,conversions",
+                                "fields": "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions",
                                 "date_preset": "last_30d"
                             }
                         )

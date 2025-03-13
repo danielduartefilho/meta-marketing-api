@@ -504,7 +504,7 @@ paths:
           description: Comma-separated list of fields to return
           schema:
             type: string
-            default: "id,name,creative,type,thumbnail_url,clicks,ctr,conversions"
+            default: "id,name,creative{id,title,body,image_url,video_id,thumbnail_url},status,effective_status,preview_shareable_link"
         - name: limit
           in: query
           description: Number of records to return per request
@@ -572,7 +572,7 @@ paths:
           description: Comma-separated list of fields to return
           schema:
             type: string
-            default: "impressions,clicks,ctr,engagement_rate,video_views,conversions"
+            default: "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions"
         - name: date_preset
           in: query
           description: Predefined date range for the data
@@ -941,27 +941,32 @@ components:
               type: string
               description: Creative body text
               example: "Descubra como o Produto X pode transformar sua vida!"
-        type:
+            image_url:
+              type: string
+              description: URL of the image creative
+              example: "https://scontent.xx.fbcdn.net/v/example.jpg"
+            video_id:
+              type: string
+              description: ID of the video creative
+              example: "120218493633420151"
+            thumbnail_url:
+              type: string
+              description: URL of the creative thumbnail
+              example: "https://scontent.xx.fbcdn.net/v/example.jpg"
+        status:
           type: string
-          description: Ad type
-          enum: [IMAGE, VIDEO, CAROUSEL, COLLECTION]
-          example: "VIDEO"
-        thumbnail_url:
+          description: Ad status
+          enum: [ACTIVE, PAUSED, DELETED, ARCHIVED, DISAPPROVED]
+          example: "ACTIVE"
+        effective_status:
           type: string
-          description: URL of the ad thumbnail
-          example: "https://scontent.xx.fbcdn.net/v/example.jpg"
-        clicks:
-          type: integer
-          description: Number of clicks
-          example: 1500
-        ctr:
-          type: number
-          description: Click-through rate (percentage)
-          example: 2.5
-        conversions:
-          type: integer
-          description: Number of conversions
-          example: 50
+          description: Effective status of the ad
+          enum: [ACTIVE, PAUSED, DELETED, ARCHIVED, DISAPPROVED, IN_PROCESS, WITH_ISSUES]
+          example: "ACTIVE"
+        preview_shareable_link:
+          type: string
+          description: URL to preview the ad
+          example: "https://www.facebook.com/ads/archive/render_ad/123456789"
 
     CreativePerformance:
       type: object
@@ -970,26 +975,73 @@ components:
           type: integer
           description: Number of impressions
           example: 50000
-        clicks:
+        inline_link_clicks:
           type: integer
-          description: Number of clicks
+          description: Number of clicks on links within the ad
           example: 1500
-        ctr:
+        inline_link_click_ctr:
           type: number
-          description: Click-through rate (percentage)
+          description: Click-through rate for links within the ad (percentage)
           example: 2.5
-        engagement_rate:
-          type: number
-          description: Engagement rate (percentage)
-          example: 4.2
-        video_views:
-          type: integer
-          description: Number of video views (for video ads)
-          example: 25000
-        conversions:
-          type: integer
-          description: Number of conversions
-          example: 50
+        actions:
+          type: array
+          description: Array of actions taken on the ad
+          items:
+            type: object
+            properties:
+              action_type:
+                type: string
+                description: Type of action
+                example: "post_engagement"
+              value:
+                type: integer
+                description: Number of actions
+                example: 250
+        video_p25_watched_actions:
+          type: array
+          description: Number of times video was watched to 25%
+          items:
+            type: object
+            properties:
+              value:
+                type: integer
+                example: 40000
+        video_p50_watched_actions:
+          type: array
+          description: Number of times video was watched to 50%
+          items:
+            type: object
+            properties:
+              value:
+                type: integer
+                example: 30000
+        video_p75_watched_actions:
+          type: array
+          description: Number of times video was watched to 75%
+          items:
+            type: object
+            properties:
+              value:
+                type: integer
+                example: 20000
+        video_p95_watched_actions:
+          type: array
+          description: Number of times video was watched to 95%
+          items:
+            type: object
+            properties:
+              value:
+                type: integer
+                example: 15000
+        video_p100_watched_actions:
+          type: array
+          description: Number of times video was watched to completion
+          items:
+            type: object
+            properties:
+              value:
+                type: integer
+                example: 10000
         date_start:
           type: string
           format: date

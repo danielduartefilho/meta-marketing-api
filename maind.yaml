@@ -247,6 +247,7 @@ paths:
       description: |
         Get a list of all campaigns for ad account 906594379912215.
         Required permissions: ads_management
+        Note: Use account_id without 'act_' prefix, it will be added automatically in the URL
       tags:
         - Campaigns
       security:
@@ -255,7 +256,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (without act_ prefix)
+          description: Ad account ID (without 'act_' prefix, it will be added automatically)
           schema:
             type: string
             pattern: '^\d+$'
@@ -323,7 +324,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (without act_ prefix)
+          description: Ad account ID (without 'act_' prefix, it will be added automatically)
           schema:
             type: string
             pattern: '^\d+$'
@@ -381,7 +382,7 @@ paths:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID (without act_ prefix)
+          description: Ad account ID (without 'act_' prefix, it will be added automatically)
           schema:
             type: string
             pattern: '^\d+$'

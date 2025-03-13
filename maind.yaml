@@ -376,7 +376,7 @@ paths:
           description: Fields to return
           schema:
             type: string
-            default: "id,name,subtype,approximate_count,delivery_status,lookalike_spec"
+            default: "id,name,subtype,delivery_status,lookalike_spec"
         - name: filtering
           in: query
           description: Filter by audience ID
@@ -1032,10 +1032,6 @@ components:
           type: string
           description: Lookalike audience subtype
           example: "similarity"
-        approximate_count:
-          type: integer
-          description: Approximate number of people in the audience
-          example: 1000000
         delivery_status:
           type: string
           description: Delivery status of the audience

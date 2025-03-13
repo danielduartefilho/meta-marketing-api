@@ -1,5 +1,16 @@
-summary: List campaigns
-description: Get a list of all campaigns for the specified ad account
+summary: List campaigns with performance metrics
+description: |
+  Get a list of all campaigns for the specified ad account with performance metrics.
+  
+  Métricas Disponíveis:
+  - Básicas: impressions, reach, spend, clicks, ctr, cpc
+  - Vídeo: retenção (p25-p100), engajamento
+  - Performance: conversões, ROAS
+  
+  Melhores Práticas:
+  - Limite de 30 dias para análise
+  - Máximo 2-3 breakdowns
+  - Priorizar filtros por ID
 operationId: getCampaigns
 tags:
   - Campaigns
@@ -8,30 +19,87 @@ parameters:
     name: account_id
     in: path
     required: true
-    description: Ad account ID (act_906594379912215)
+    description: Ad account ID
     schema:
       type: string
       pattern: '^act_\d+$'
-      example: "act_906594379912215"
-  access_token:
-    name: access_token
-    in: header
-    required: true
-    description: Page access token with ads_management permission
-    schema:
-      type: string
   fields:
     name: fields
     in: query
     required: true
-    description: Comma-separated list of fields to return
+    description: |
+      Campos disponíveis:
+      - Básicos: id, name, status, objective
+      - Métricas: impressions, reach, spend, clicks
+      - Vídeo: video_p25_watched...video_p100_watched
+      - Engajamento: video_avg_time_watched, video_play_actions
+    schema:
+      type: array
+      items:
+        type: string
+        enum:
+          # Campos Básicos
+          - id
+          - name
+          - status
+          - objective
+          # Métricas Básicas
+          - impressions
+          - reach
+          - spend
+          - clicks
+          - ctr
+          - cpc
+          # Métricas de Vídeo - Retenção
+          - p25_watched
+          - p50_watched
+          - p75_watched
+          - p95_watched
+          - p100_watched
+          # Métricas de Vídeo - Engajamento
+          - avg_time_watched
+          - play_actions
+          - views_2s
+          - views_30s
+          # Métricas de Performance
+          - conversions
+          - cost_per_conversion
+          - roas
+      default: ["id", "name", "status", "objective"]
+  date_preset:
+    name: date_preset
+    in: query
+    description: Limite de 30 dias conforme recomendação
     schema:
       type: string
-      example: "id,name,status,objective"
+      enum:
+        - today
+        - yesterday
+        - last_7d
+        - last_30d
+      default: "last_30d"
+  breakdowns:
+    name: breakdowns
+    in: query
+    description: |
+      Breakdowns Suportados (máximo 2-3):
+      - publisher_platform: facebook, instagram
+      - device_platform: desktop, mobile
+      - age, gender: Demografia
+    schema:
+      type: array
+      items:
+        type: string
+        enum:
+          - publisher_platform
+          - device_platform
+          - age
+          - gender
+      maxItems: 3
   limit:
     name: limit
     in: query
-    description: Number of records to return per request
+    description: Número de registros por página
     schema:
       type: integer
       minimum: 1
@@ -40,12 +108,12 @@ parameters:
   after:
     name: after
     in: query
-    description: Cursor for pagination
+    description: Cursor para paginação
     schema:
       type: string
 responses:
   '200':
-    description: Success. Returns a list of campaigns
+    description: Success
     headers:
       X-Business-Use-Case-Usage:
         $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -56,17 +124,24 @@ responses:
     content:
       application/json:
         schema:
-          $ref: "#/components/schemas/CampaignList"
-        example:
-          data:
-            - id: "23847392874"
-              name: "Website Traffic Campaign"
-              status: "ACTIVE"
-              objective: "LINK_CLICKS"
-          paging:
-            cursors:
-              before: "MAZDZD"
-              after: "MQZDZD"
+          type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/Campaign"
+            paging:
+              type: object
+              properties:
+                cursors:
+                  type: object
+                  properties:
+                    before:
+                      type: string
+                    after:
+                      type: string
   '400':
     $ref: "#/components/responses/BadRequest"
   '401':

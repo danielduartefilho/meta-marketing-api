@@ -1,11 +1,10 @@
 openapi: 3.1.0
 info:
   title: Meta Marketing API Connector
-  version: '1.5.0'
+  version: 1.4.0
   description: |
-    Meta Marketing API Connector for accessing campaign data and insights.
-    API Version: v22.0
-    Base URL: https://graph.facebook.com/v22.0
+    Conector para a API de Marketing do Meta (Facebook), versão v22.0.
+    Fornece acesso a dados de campanhas, conjuntos de anúncios, anúncios e métricas de performance.
 
 servers:
   - url: https://graph.facebook.com/v22.0
@@ -269,9 +268,17 @@ paths:
   /act_{account_id}/insights:
     get:
       operationId: getAccountInsights
-      summary: Get account insights
+      summary: Get insights data
       description: |
         Get detailed performance metrics for an ad account, filtered by campaign, ad set, or ad.
+        
+        Examples:
+        1. Get ad insights:
+           level=ad&filtering=[{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
+        
+        2. Get campaign insights:
+           level=campaign&filtering=[{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]
+        
         Required permissions: ads_management
       tags:
         - Insights

@@ -168,8 +168,8 @@ class MetaAPITester:
                         f"/act_{account_id}/insights",
                         params={
                             "level": "ad",
-                            "fields": "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions",
-                            "date_preset": "last_30d",
+                            "fields": "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,date_start,date_stop",
+                            "date_preset": "last_7d",
                             "filtering": json.dumps([{
                                 "field": "ad.id",
                                 "operator": "EQUAL",
@@ -179,12 +179,12 @@ class MetaAPITester:
                     )
                 
                 # 8. Insights da campanha
-                print("\n8. Testando insights")
+                print("\n8. Testando insights da campanha")
                 self.test_endpoint(
                     f"/act_{account_id}/insights",
                     params={
                         "level": "campaign",
-                        "fields": "impressions,reach,spend",
+                        "fields": "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions,date_start,date_stop",
                         "date_preset": "last_7d",
                         "filtering": json.dumps([{
                             "field": "campaign.id",

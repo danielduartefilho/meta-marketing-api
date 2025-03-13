@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: Meta Marketing API Connector
   version: '1.4.0'
@@ -267,7 +267,93 @@ paths:
           $ref: "#/components/responses/RateLimitExceeded"
 
   /act_{account_id}/insights:
-    $ref: './campaign-insights.yaml#/paths/~1act_{account_id}~1insights'
+    get:
+      operationId: getCampaignInsights
+      summary: Get campaign insights
+      description: |
+        Get insights data for campaigns in the specified ad account.
+        Required permissions: ads_management
+      tags:
+        - Insights
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only, without act_ prefix)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: level
+          in: query
+          required: true
+          description: Level of insights data
+          schema:
+            type: string
+            enum: [account, campaign, adset, ad]
+            default: campaign
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of metrics to return
+          schema:
+            type: string
+            default: "impressions,reach,spend"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the insights
+          schema:
+            type: string
+            enum: [today, yesterday, this_month, last_month, this_quarter, lifetime, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d]
+            default: last_7d
+        - name: filtering
+          in: query
+          description: JSON array of filter objects to apply
+          schema:
+            type: string
+            example: '[{"field":"campaign.id","operator":"EQUAL","value":"120218493633420149"}]'
+      responses:
+        '200':
+          description: Success. Returns insights data
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        impressions:
+                          type: integer
+                          description: Number of times your ads were shown
+                          example: 1000
+                        reach:
+                          type: integer
+                          description: Number of unique people who saw your ads
+                          example: 800
+                        spend:
+                          type: number
+                          description: Amount spent in account currency
+                          example: 50.00
+                  paging:
+                    $ref: "#/components/schemas/Paging"
+        '400':
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
 
 components:
   securitySchemes:

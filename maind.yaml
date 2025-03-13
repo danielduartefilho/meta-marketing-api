@@ -377,95 +377,10 @@ paths:
 
   /act_{account_id}/insights:
     get:
-      operationId: getAccountInsights
-      summary: Get insights data
+      operationId: getInsights
+      summary: Get unified insights for any level
       description: |
-        Get performance metrics filtered by campaign, ad set, or ad. Use level parameter to specify data granularity and filtering to target specific items.
-        Examples: level=ad&filtering=[{"field":"ad.id","operator":"EQUAL","value":"AD_ID"}]
-        Required permissions: ads_management
-      tags:
-        - Insights
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only, without act_ prefix)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: level
-          in: query
-          required: true
-          description: Level of insights data to return
-          schema:
-            type: string
-            enum: [account, campaign, adset, ad]
-            default: "account"
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of fields to return
-          schema:
-            type: string
-            default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, this_month, last_month, this_quarter, lifetime, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d]
-            default: "last_7d"
-        - name: filtering
-          in: query
-          description: JSON array of filter objects to apply
-          schema:
-            type: string
-            example: '[{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]'
-        - name: breakdowns
-          in: query
-          description: Demographic breakdowns to analyze (for audience insights)
-          schema:
-            type: string
-            example: "age,gender,country,region"
-      responses:
-        '200':
-          description: Success. Returns insights data for the specified level
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      oneOf:
-                        - $ref: "#/components/schemas/InsightData"
-                        - $ref: "#/components/schemas/AudienceInsights"
-                  paging:
-                    $ref: "#/components/schemas/Paging"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/insights/campaign:
-    get:
-      operationId: getCampaignInsights
-      summary: Get campaign performance metrics
-      description: |
-        Get detailed performance metrics for a specific campaign using the insights endpoint.
+        Get performance metrics for accounts, campaigns, ad sets, or ads using the unified insights endpoint.
         Required permissions: ads_management, ads_read
       tags:
         - Analytics
@@ -480,21 +395,32 @@ paths:
             type: string
             pattern: '^\d+$'
             example: "906594379912215"
-        - name: campaign_id
+        - name: level
           in: query
           required: true
-          description: Campaign ID to analyze
+          description: Level of aggregation for the data
           schema:
             type: string
-            pattern: '^\d+$'
-            example: "120218537827030149"
+            enum: [account, campaign, adset, ad]
+            default: "account"
         - name: fields
           in: query
           required: true
           description: Fields to return
           schema:
             type: string
-            default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions,date_start,date_stop"
+            default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions"
+        - name: filtering
+          in: query
+          description: Filter results by specific criteria. Example for campaign insights - [{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]
+          schema:
+            type: string
+        - name: breakdowns
+          in: query
+          description: Optional breakdowns for more detailed analysis. Note - action_type cannot be combined with age,gender
+          schema:
+            type: string
+            example: "age,gender,device_platform"
         - name: date_preset
           in: query
           description: Predefined date range for the data
@@ -504,7 +430,7 @@ paths:
             default: "last_30d"
       responses:
         '200':
-          description: Success. Returns campaign performance metrics
+          description: Success. Returns insights metrics
           headers:
             X-Business-Use-Case-Usage:
               $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -515,131 +441,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CampaignInsights"
-
-  /act_{account_id}/insights/demographics:
-    get:
-      operationId: getDemographicInsights
-      summary: Get demographic performance analysis
-      description: |
-        Get performance metrics broken down by age, gender and device.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "impressions,spend,ctr,cpc,cpm,actions"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
-            default: "last_7d"
-        - name: level
-          in: query
-          description: Level of aggregation for the data
-          schema:
-            type: string
-            enum: [account, campaign, adset, ad]
-            default: "campaign"
-        - name: breakdowns
-          in: query
-          description: Demographic breakdowns (cannot be combined with action_type)
-          schema:
-            type: string
-            default: "age,gender,device_platform"
-      responses:
-        '200':
-          description: Success. Returns demographic insights
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DemographicInsights"
-
-  /act_{account_id}/insights/conversions:
-    get:
-      operationId: getConversionInsights
-      summary: Get conversion performance analysis
-      description: |
-        Get conversion metrics broken down by action type and device.
-        Required permissions: ads_management, ads_read
-      tags:
-        - Analytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID (numeric part only)
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "906594379912215"
-        - name: fields
-          in: query
-          required: true
-          description: Fields to return
-          schema:
-            type: string
-            default: "impressions,spend,ctr,cpc,cpm,actions"
-        - name: date_preset
-          in: query
-          description: Predefined date range for the data
-          schema:
-            type: string
-            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
-            default: "last_7d"
-        - name: level
-          in: query
-          description: Level of aggregation for the data
-          schema:
-            type: string
-            enum: [account, campaign, adset, ad]
-            default: "campaign"
-        - name: breakdowns
-          in: query
-          description: Action type breakdown (can be combined with device_platform)
-          schema:
-            type: string
-            default: "action_type,device_platform"
-      responses:
-        '200':
-          description: Success. Returns conversion insights
-          headers:
-            X-Business-Use-Case-Usage:
-              $ref: "#/components/headers/BusinessUseCaseUsage"
-            X-Rate-Limit-Reset:
-              $ref: "#/components/headers/RateLimitReset"
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ConversionInsights"
+                $ref: "#/components/schemas/UnifiedInsights"
 
   /act_{account_id}/ads/performance:
     get:
@@ -1895,3 +1697,65 @@ components:
                 type: string
                 format: date
                 example: "2025-03-13"
+
+    UnifiedInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              impressions:
+                type: string
+                description: Number of impressions
+                example: "50000"
+              reach:
+                type: string
+                description: Number of unique users reached
+                example: "30000"
+              spend:
+                type: string
+                description: Amount spent
+                example: "1147.20"
+              inline_link_clicks:
+                type: string
+                description: Number of clicks on links within the ad
+                example: "2500"
+              inline_link_click_ctr:
+                type: string
+                description: Click-through rate for links within the ad
+                example: "5.0"
+              actions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: Type of action
+                      example: "link_click"
+                    value:
+                      type: string
+                      description: Number of actions
+                      example: "2500"
+              date_start:
+                type: string
+                format: date
+                example: "2025-02-12"
+              date_stop:
+                type: string
+                format: date
+                example: "2025-03-13"
+              breakdowns:
+                type: object
+                properties:
+                  age:
+                    type: string
+                    example: "25-34"
+                  gender:
+                    type: string
+                    example: "female"
+                  device_platform:
+                    type: string
+                    example: "mobile"

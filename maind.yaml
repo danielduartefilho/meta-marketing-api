@@ -587,6 +587,162 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /act_{account_id}/budget_analysis:
+    get:
+      operationId: getBudgetAnalysis
+      summary: Get budget vs. return analysis
+      description: |
+        Get detailed analysis of budget allocation and return on investment.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "spend,roi,cpa,cpc,ctr"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
+            default: "last_30d"
+      responses:
+        '200':
+          description: Success. Returns budget analysis metrics
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetAnalysis"
+
+  /act_{account_id}/campaigns/{campaign_id}/performance_insights:
+    get:
+      operationId: getCampaignPerformanceInsights
+      summary: Get campaign performance metrics
+      description: |
+        Get detailed performance metrics and insights for a specific campaign.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID to analyze
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "120218493633420149"
+        - name: date_preset
+          in: query
+          required: true
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [today, yesterday, last_7d, last_30d, this_month, last_month]
+            default: "last_7d"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "impressions,reach,spend,ctr,cpc,cpm,conversions"
+      responses:
+        '200':
+          description: Success. Returns performance metrics
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformanceInsights"
+
+  /act_{account_id}/trends:
+    get:
+      operationId: getAccountTrends
+      summary: Get account trends and recommendations
+      description: |
+        Get trends analysis and optimization recommendations for the ad account.
+        Required permissions: ads_management, ads_read
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: "best_performing_creatives,best_performing_audiences,campaigns_to_optimize"
+        - name: date_preset
+          in: query
+          description: Predefined date range for the data
+          schema:
+            type: string
+            enum: [last_7d, last_30d, this_month, last_month]
+            default: "last_30d"
+      responses:
+        '200':
+          description: Success. Returns trends and recommendations
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountTrends"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1068,3 +1224,178 @@ components:
               type: string
               description: Target country for the lookalike audience
               example: "BR"
+
+    BudgetAnalysis:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              spend:
+                type: string
+                description: Total amount spent
+                example: "5000.00"
+              roi:
+                type: string
+                description: Return on investment
+                example: "2.5"
+              cpa:
+                type: string
+                description: Cost per action
+                example: "12.50"
+              cpc:
+                type: string
+                description: Cost per click
+                example: "0.50"
+              ctr:
+                type: string
+                description: Click-through rate
+                example: "2.3"
+              date_start:
+                type: string
+                format: date
+                example: "2025-03-13"
+              date_stop:
+                type: string
+                format: date
+                example: "2025-03-13"
+
+    PerformanceInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              impressions:
+                type: string
+                description: Number of impressions
+                example: "50000"
+              reach:
+                type: string
+                description: Number of unique users reached
+                example: "30000"
+              spend:
+                type: string
+                description: Amount spent
+                example: "5000.00"
+              ctr:
+                type: string
+                description: Click-through rate
+                example: "2.3"
+              cpc:
+                type: string
+                description: Cost per click
+                example: "0.50"
+              cpm:
+                type: string
+                description: Cost per 1000 impressions
+                example: "10.00"
+              conversions:
+                type: string
+                description: Number of conversions
+                example: "150"
+              date_start:
+                type: string
+                format: date
+                example: "2025-03-13"
+              date_stop:
+                type: string
+                format: date
+                example: "2025-03-13"
+
+    AccountTrends:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            best_performing_creatives:
+              type: array
+              items:
+                type: object
+                properties:
+                  creative_id:
+                    type: string
+                    description: Creative ID
+                    example: "120218493633420149"
+                  name:
+                    type: string
+                    description: Creative name
+                    example: "Summer Sale Video"
+                  performance_score:
+                    type: string
+                    description: Performance score (0-100)
+                    example: "85"
+                  metrics:
+                    type: object
+                    properties:
+                      ctr:
+                        type: string
+                        example: "3.2"
+                      conversion_rate:
+                        type: string
+                        example: "2.1"
+            best_performing_audiences:
+              type: array
+              items:
+                type: object
+                properties:
+                  audience_id:
+                    type: string
+                    description: Audience ID
+                    example: "120208690219500149"
+                  name:
+                    type: string
+                    description: Audience name
+                    example: "Lookalike - High Value Customers"
+                  performance_score:
+                    type: string
+                    description: Performance score (0-100)
+                    example: "92"
+                  metrics:
+                    type: object
+                    properties:
+                      reach:
+                        type: string
+                        example: "50000"
+                      conversion_rate:
+                        type: string
+                        example: "2.8"
+            campaigns_to_optimize:
+              type: array
+              items:
+                type: object
+                properties:
+                  campaign_id:
+                    type: string
+                    description: Campaign ID
+                    example: "120218493633420149"
+                  name:
+                    type: string
+                    description: Campaign name
+                    example: "Website Traffic Campaign"
+                  optimization_score:
+                    type: string
+                    description: Optimization score (0-100)
+                    example: "65"
+                  recommendations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          description: Type of recommendation
+                          example: "BUDGET_OPTIMIZATION"
+                        description:
+                          type: string
+                          description: Detailed recommendation
+                          example: "Increase budget by 20% to capture more conversions"
+                        impact:
+                          type: string
+                          description: Estimated impact
+                          example: "HIGH"

@@ -471,22 +471,29 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /campaigns/{campaign_id}/ads:
+  /act_{account_id}/ads:
     get:
-      operationId: getCampaignAds
-      summary: List ads in a campaign
+      operationId: getAccountAds
+      summary: List ads in an account
       description: |
-        Get a list of all ads and creatives in a specific campaign.
+        Get a list of all ads and creatives in a specific account.
         Required permissions: ads_management
       tags:
         - Ads & Creatives
       security:
         - bearerAuth: []
       parameters:
-        - name: campaign_id
+        - name: account_id
           in: path
           required: true
-          description: Campaign ID
+          description: Ad account ID (numeric part only, without act_ prefix)
+          schema:
+            type: string
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: campaign_id
+          in: query
+          description: Filter ads by campaign ID
           schema:
             type: string
             pattern: '^\d+$'
@@ -539,7 +546,7 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /creatives/{creative_id}/performance:
+  /{creative_id}/insights:
     get:
       operationId: getCreativePerformance
       summary: Get creative performance metrics

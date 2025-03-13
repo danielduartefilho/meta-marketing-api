@@ -268,10 +268,10 @@ paths:
 
   /act_{account_id}/insights:
     get:
-      operationId: getCampaignInsights
-      summary: Get campaign insights
+      operationId: getAccountInsights
+      summary: Get account insights
       description: |
-        Get insights data for campaigns in the specified ad account.
+        Get detailed performance metrics for an ad account, filtered by campaign, ad set, or ad.
         Required permissions: ads_management
       tags:
         - Insights
@@ -289,25 +289,25 @@ paths:
         - name: level
           in: query
           required: true
-          description: Level of insights data
+          description: Level of insights data to return
           schema:
             type: string
             enum: [account, campaign, adset, ad]
-            default: campaign
+            default: "account"
         - name: fields
           in: query
           required: true
-          description: Comma-separated list of metrics to return
+          description: Comma-separated list of fields to return
           schema:
             type: string
-            default: "impressions,reach,spend"
+            default: "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions"
         - name: date_preset
           in: query
-          description: Predefined date range for the insights
+          description: Predefined date range for the data
           schema:
             type: string
             enum: [today, yesterday, this_month, last_month, this_quarter, lifetime, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d]
-            default: last_7d
+            default: "last_7d"
         - name: filtering
           in: query
           description: JSON array of filter objects to apply
@@ -316,7 +316,7 @@ paths:
             example: '[{"field":"campaign.id","operator":"EQUAL","value":"120218493633420149"}]'
       responses:
         '200':
-          description: Success. Returns insights data
+          description: Success. Returns insights data for the specified level
           headers:
             X-Business-Use-Case-Usage:
               $ref: "#/components/headers/BusinessUseCaseUsage"
@@ -332,20 +332,7 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        impressions:
-                          type: integer
-                          description: Number of times your ads were shown
-                          example: 1000
-                        reach:
-                          type: integer
-                          description: Number of unique people who saw your ads
-                          example: 800
-                        spend:
-                          type: number
-                          description: Amount spent in account currency
-                          example: 50.00
+                      $ref: "#/components/schemas/InsightData"
                   paging:
                     $ref: "#/components/schemas/Paging"
         '400':
@@ -741,54 +728,53 @@ components:
           enum: ["LOWEST_COST_WITH_BID_CAP", "LOWEST_COST_WITHOUT_CAP"]
           example: "LOWEST_COST_WITH_BID_CAP"
 
-    InsightsResponse:
+    InsightData:
       type: object
       properties:
-        data:
+        impressions:
+          type: string
+          description: Number of impressions
+          example: "631"
+        reach:
+          type: string
+          description: Number of people who saw the ads
+          example: "589"
+        spend:
+          type: string
+          description: Amount spent in the account currency
+          example: "15.95"
+        inline_link_clicks:
+          type: string
+          description: Number of clicks on links within the ad
+          example: "42"
+        inline_link_click_ctr:
+          type: string
+          description: Click-through rate for links within the ad (percentage)
+          example: "6.66"
+        actions:
           type: array
+          description: Array of actions taken on the ad
           items:
             type: object
             properties:
-              date_start:
+              action_type:
                 type: string
-                format: date
-                example: "2025-03-01"
-              date_end:
+                description: Type of action
+                example: "post_engagement"
+              value:
                 type: string
-                format: date
-                example: "2025-03-01"
-              campaign_id:
-                type: string
-                example: "120218493633420149"
-              impressions:
-                type: integer
-                example: 1234
-              reach:
-                type: integer
-                example: 987
-              spend:
-                type: number
-                format: float
-                example: 50.25
-              inline_post_engagement:
-                type: integer
-                example: 1039
-              video_p25_watched_actions:
-                type: integer
-                example: 11105
-              video_p50_watched_actions:
-                type: integer
-                example: 6266
-              video_p75_watched_actions:
-                type: integer
-                example: 4227
-              video_p95_watched_actions:
-                type: integer
-                example: 3205
-              video_avg_time_watched_actions:
-                type: number
-                format: float
-                example: 5.0
+                description: Number of actions
+                example: "250"
+        date_start:
+          type: string
+          format: date
+          description: Start date of the insights period
+          example: "2025-03-06"
+        date_stop:
+          type: string
+          format: date
+          description: End date of the insights period
+          example: "2025-03-12"
 
     PageAccountList:
       type: object

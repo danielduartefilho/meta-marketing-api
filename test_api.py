@@ -93,168 +93,70 @@ class MetaAPITester:
         print(f"Data/Hora: {datetime.now()}")
         print(f"Versão da API: v22.0")
         
-        # 1. Test page access
-        print("\n1. Testando acesso às páginas")
-        print("\n=== Testando GET /me/accounts ===")
+        # 1. Test insights endpoint
+        print("\n1. Testando endpoint de insights")
+        print("\n=== Testando GET /act_906594379912215/insights ===")
         
-        accounts_response = requests.get(
-            f"{self.base_url}/me/accounts",
-            headers=self.headers
+        insights_response = requests.get(
+            f"{self.base_url}/act_906594379912215/insights",
+            headers=self.headers,
+            params={
+                "level": "campaign",
+                "fields": "impressions,reach,spend,inline_link_clicks",
+                "date_preset": "last_30d"
+            }
         )
         
-        print(f"Status: {accounts_response.status_code}")
-        print(f"Tempo de resposta: {accounts_response.elapsed.total_seconds():.3f}s")
+        print(f"Status: {insights_response.status_code}")
+        print(f"Tempo de resposta: {insights_response.elapsed.total_seconds():.3f}s")
+        print(f"Rate limit usado: {insights_response.headers.get('X-Business-Use-Case-Usage', '0/9000')}")
+        print(f"Cache hit: {'Sim' if insights_response.headers.get('X-FB-Debug-Cache', 'miss') == 'hit' else 'Não'}")
         
-        if accounts_response.status_code == 200:
-            accounts_data = accounts_response.json()
-            if accounts_data.get("data"):
-                print(f"\nPáginas encontradas: {len(accounts_data['data'])}")
-                for page in accounts_data["data"]:
-                    print(f"- {page.get('name')} (ID: {page.get('id')})")
-                    print(f"  Tarefas disponíveis: {', '.join(page.get('tasks', []))}")
+        if insights_response.status_code == 200:
+            insights_data = insights_response.json()
+            if insights_data.get("data"):
+                print("\nMétricas encontradas:")
+                for metric in insights_data["data"]:
+                    print(f"- Impressões: {metric.get('impressions', '0')}")
+                    print(f"- Alcance: {metric.get('reach', '0')}")
+                    print(f"- Gasto: {metric.get('spend', '0')}")
+                    print(f"- Cliques: {metric.get('inline_link_clicks', '0')}")
             else:
-                print("Nenhuma página encontrada")
+                print("Nenhuma métrica encontrada no período")
         else:
-            print(f"Erro: {accounts_response.status_code}")
-            print(accounts_response.text)
+            print(f"Erro: {insights_response.status_code}")
+            print(insights_response.text)
+            
+        # 2. Test trends endpoint
+        print("\n2. Testando endpoint de trends")
+        print("\n=== Testando GET /act_906594379912215/trends/performance ===")
         
-        # 1. Listar contas de anúncio
-        print("\n1. Testando listagem de contas")
-        accounts = self.test_endpoint(
-            "/me/adaccounts",
-            params={"fields": "id,name,account_status"}
+        trends_response = requests.get(
+            f"{self.base_url}/act_906594379912215/trends/performance",
+            headers=self.headers,
+            params={
+                "date_preset": "last_30d"
+            }
         )
         
-        if accounts and "data" in accounts and accounts["data"]:
-            account = accounts["data"][0]
-            account_id = account["id"].replace("act_", "")
-            
-            # 2. Listar campanhas da conta
-            print("\n2. Testando listagem de campanhas")
-            campaigns = self.test_endpoint(
-                f"/act_{account_id}/campaigns",
-                params={
-                    "fields": "id,name,status,objective",
-                    "limit": 25
-                }
-            )
-            
-            if campaigns and "data" in campaigns and campaigns["data"]:
-                campaign = campaigns["data"][0]
-                campaign_id = campaign["id"]
-                
-                # 3. Detalhes da campanha
-                print("\n3. Testando detalhes da campanha")
-                self.test_endpoint(
-                    f"/{campaign_id}",
-                    params={
-                        "fields": "id,name,status,objective,daily_budget,lifetime_budget,bid_strategy"
-                    }
-                )
-                
-                # 4. Listar conjuntos de anúncios
-                print("\n4. Testando listagem de conjuntos de anúncios")
-                adsets = self.test_endpoint(
-                    f"/act_{account_id}/adsets",
-                    params={
-                        "fields": "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event",
-                        "breakdowns": "age,gender,region",
-                        "limit": 25
-                    }
-                )
-                
-                if adsets and "data" in adsets and adsets["data"]:
-                    adset = adsets["data"][0]
-                    adset_id = adset["id"]
-                    
-                    # 5. Detalhes do conjunto de anúncios
-                    print("\n5. Testando detalhes do conjunto de anúncios")
-                    self.test_endpoint(
-                        f"/{adset_id}",
-                        params={
-                            "fields": "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event"
-                        }
-                    )
-                
-                # 6. Listar anúncios da campanha
-                print("\n6. Testando listagem de anúncios")
-                ads = self.test_endpoint(
-                    f"/act_{account_id}/ads",
-                    params={
-                        "campaign_id": campaign_id,
-                        "fields": "id,name,creative{id,title,body,image_url,video_id,thumbnail_url},status,effective_status,preview_shareable_link",
-                        "limit": 25
-                    }
-                )
-                
-                if ads and "data" in ads and ads["data"]:
-                    ad = ads["data"][0]
-                    ad_id = ad["id"]
-                    
-                    # 7. Métricas de performance do anúncio
-                    print("\n7. Testando métricas do anúncio")
-                    self.test_endpoint(
-                        f"/act_{account_id}/insights",
-                        params={
-                            "level": "ad",
-                            "fields": "impressions,inline_link_clicks,inline_link_click_ctr,actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,date_start,date_stop",
-                            "date_preset": "last_7d",
-                            "filtering": json.dumps([{
-                                "field": "ad.id",
-                                "operator": "EQUAL",
-                                "value": ad_id
-                            }])
-                        }
-                    )
-                
-                # 8. Insights da campanha
-                print("\n8. Testando insights da campanha")
-                self.test_endpoint(
-                    f"/act_{account_id}/insights",
-                    params={
-                        "level": "campaign",
-                        "fields": "impressions,reach,spend,inline_link_clicks,inline_link_click_ctr,actions,date_start,date_stop",
-                        "date_preset": "last_7d",
-                        "filtering": json.dumps([{
-                            "field": "campaign.id",
-                            "operator": "EQUAL",
-                            "value": campaign_id
-                        }])
-                    }
-                )
-                
-                # 9. Testando trends de performance
-                print("\n9. Testando trends de performance")
-                print("\n=== Testando GET /act_906594379912215/trends/performance ===")
-                
-                trends_response = requests.get(
-                    f"{self.base_url}/act_906594379912215/trends/performance",
-                    headers=self.headers,
-                    params={
-                        "date_preset": "last_30d"
-                    }
-                )
-                
-                print(f"Status: {trends_response.status_code}")
-                print(f"Tempo de resposta: {trends_response.elapsed.total_seconds():.3f}s")
-                print(f"Rate limit usado: {trends_response.headers.get('X-Business-Use-Case-Usage', '0/9000')}")
-                print(f"Cache hit: {'Sim' if trends_response.headers.get('X-FB-Debug-Cache', 'miss') == 'hit' else 'Não'}")
-                
-                if trends_response.status_code == 200:
-                    trends_data = trends_response.json()
-                    print("\nTrends encontrados:")
-                    if trends_data.get("data"):
-                        if trends_data["data"].get("best_performing_creatives"):
-                            print(f"- {len(trends_data['data']['best_performing_creatives'])} criativos de melhor performance")
-                        if trends_data["data"].get("best_performing_audiences"):
-                            print(f"- {len(trends_data['data']['best_performing_audiences'])} segmentos de público de melhor performance")
-                        if trends_data["data"].get("campaigns_to_optimize"):
-                            print(f"- {len(trends_data['data']['campaigns_to_optimize'])} campanhas para otimizar")
-                    else:
-                        print("Nenhum trend encontrado no período")
-                else:
-                    print(f"Erro: {trends_response.status_code}")
-                    print(trends_response.text)
+        print(f"Status: {trends_response.status_code}")
+        print(f"Tempo de resposta: {trends_response.elapsed.total_seconds():.3f}s")
+        print(f"Rate limit usado: {trends_response.headers.get('X-Business-Use-Case-Usage', '0/9000')}")
+        print(f"Cache hit: {'Sim' if trends_response.headers.get('X-FB-Debug-Cache', 'miss') == 'hit' else 'Não'}")
+        
+        if trends_response.status_code == 200:
+            trends_data = trends_response.json()
+            print("\nTrends encontrados:")
+            if trends_data.get("data"):
+                if trends_data["data"].get("best_performing_creatives"):
+                    print(f"- {len(trends_data['data']['best_performing_creatives'])} criativos de melhor performance")
+                if trends_data["data"].get("best_performing_audiences"):
+                    print(f"- {len(trends_data['data']['best_performing_audiences'])} segmentos de público de melhor performance")
+            else:
+                print("Nenhum trend encontrado no período")
+        else:
+            print(f"Erro: {trends_response.status_code}")
+            print(trends_response.text)
 
 def validate_token():
     """Validate if token has required permissions"""
@@ -265,22 +167,17 @@ def validate_token():
         )
         if response.status_code == 200:
             permissions = response.json().get("data", [])
-            required = {
-                "ads_management", 
-                "ads_read",
-                "pages_show_list",
-                "pages_read_engagement"
-            }
+            required = {"ads_read"}  # Apenas ads_read é necessário
             granted = {p["permission"] for p in permissions if p["status"] == "granted"}
             missing = required - granted
             if missing:
-                print("\nERRO: Token não tem todas as permissões necessárias.")
-                print(f"Permissões faltando: {missing}")
+                print("\nERRO: Token não tem a permissão necessária.")
+                print(f"Permissão faltando: {missing}")
                 print("\nPermissões concedidas:")
                 for p in granted:
                     print(f"- {p}")
                 return False
-            print("\nPermissões validadas com sucesso:")
+            print("\nPermissão validada com sucesso:")
             for p in granted:
                 print(f"- {p}")
             return True

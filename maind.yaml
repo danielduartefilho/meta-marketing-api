@@ -350,12 +350,12 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /act_{account_id}/customaudiences/{audience_id}:
+  /act_{account_id}/customaudiences:
     get:
       operationId: getLookalikeAudienceInsights
       summary: Get lookalike audience insights
       description: |
-        Get performance metrics for a lookalike audience.
+        Get details and performance metrics for lookalike audiences.
         Required permissions: ads_management, ads_read
       tags:
         - Insights
@@ -370,14 +370,6 @@ paths:
             type: string
             pattern: '^\d+$'
             example: "906594379912215"
-        - name: audience_id
-          in: path
-          required: true
-          description: Lookalike audience ID
-          schema:
-            type: string
-            pattern: '^\d+$'
-            example: "120208690219500149"
         - name: fields
           in: query
           required: true
@@ -385,6 +377,12 @@ paths:
           schema:
             type: string
             default: "id,name,subtype,approximate_count,delivery_status,lookalike_spec"
+        - name: filtering
+          in: query
+          description: Filter by audience ID
+          schema:
+            type: string
+            example: '[{"field":"id","operator":"EQUAL","value":"120212768315400149"}]'
       responses:
         '200':
           description: Success. Returns audience details and metrics

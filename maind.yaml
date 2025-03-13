@@ -292,27 +292,27 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /{ad_account_id}/campaigns:
+  /act_{accountId}/campaigns:
     get:
       operationId: getCampaigns
       summary: List campaigns
       description: |
         Get a list of all campaigns for the specified ad account.
         Required permissions: ads_management
-        Note: Use the full ad_account_id (with act_ prefix) from /me/adaccounts
+        Note: Use the account ID from /me/adaccounts (without act_ prefix)
       tags:
         - Campaigns
       security:
         - bearerAuth: []
       parameters:
-        - name: ad_account_id
+        - name: accountId
           in: path
           required: true
-          description: Full ad account ID (including act_ prefix from /me/adaccounts)
+          description: Ad account ID (numeric part only, without act_ prefix)
           schema:
             type: string
-            pattern: '^act_\d+$'
-            example: "act_906594379912215"
+            pattern: '^\d+$'
+            example: "906594379912215"
         - name: fields
           in: query
           required: true
@@ -360,28 +360,28 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /{ad_account_id}/campaigns/{campaign_id}:
+  /act_{accountId}/campaigns/{campaignId}:
     get:
       operationId: getCampaignById
       summary: Get campaign details
       description: |
         Get detailed information about a specific campaign.
         Required permissions: ads_management
-        Note: Use the full ad_account_id (with act_ prefix) from /me/adaccounts
+        Note: Use the account ID from /me/adaccounts (without act_ prefix)
       tags:
         - Campaigns
       security:
         - bearerAuth: []
       parameters:
-        - name: ad_account_id
+        - name: accountId
           in: path
           required: true
-          description: Full ad account ID (including act_ prefix from /me/adaccounts)
+          description: Ad account ID (numeric part only, without act_ prefix)
           schema:
             type: string
-            pattern: '^act_\d+$'
-            example: "act_906594379912215"
-        - name: campaign_id
+            pattern: '^\d+$'
+            example: "906594379912215"
+        - name: campaignId
           in: path
           required: true
           description: Campaign ID (get this from /campaigns endpoint)
@@ -418,27 +418,27 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /{ad_account_id}/insights:
+  /act_{accountId}/insights:
     get:
       operationId: getCampaignInsights
       summary: Get campaign insights
       description: |
         Get performance metrics for a specific campaign.
         Required permissions: ads_read
-        Note: Use the full ad_account_id (with act_ prefix) from /me/adaccounts
+        Note: Use the account ID from /me/adaccounts (without act_ prefix)
       tags:
         - Insights
       security:
         - bearerAuth: []
       parameters:
-        - name: ad_account_id
+        - name: accountId
           in: path
           required: true
-          description: Full ad account ID (including act_ prefix from /me/adaccounts)
+          description: Ad account ID (numeric part only, without act_ prefix)
           schema:
             type: string
-            pattern: '^act_\d+$'
-            example: "act_906594379912215"
+            pattern: '^\d+$'
+            example: "906594379912215"
         - name: level
           in: query
           required: true

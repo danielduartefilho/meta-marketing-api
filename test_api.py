@@ -123,8 +123,32 @@ class MetaAPITester:
                     }
                 )
                 
-                # 4. Insights da campanha
-                print("\n4. Testando insights")
+                # 4. Listar conjuntos de anúncios
+                print("\n4. Testando listagem de conjuntos de anúncios")
+                adsets = self.test_endpoint(
+                    f"/act_{account_id}/adsets",
+                    params={
+                        "fields": "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event",
+                        "breakdowns": "age,gender,region",
+                        "limit": 25
+                    }
+                )
+                
+                if adsets and "data" in adsets and adsets["data"]:
+                    adset = adsets["data"][0]
+                    adset_id = adset["id"]
+                    
+                    # 5. Detalhes do conjunto de anúncios
+                    print("\n5. Testando detalhes do conjunto de anúncios")
+                    self.test_endpoint(
+                        f"/adsets/{adset_id}",
+                        params={
+                            "fields": "id,name,targeting,daily_budget,lifetime_budget,status,bid_strategy,billing_event"
+                        }
+                    )
+                
+                # 6. Insights
+                print("\n6. Testando insights")
                 self.test_endpoint(
                     f"/act_{account_id}/insights",
                     params={

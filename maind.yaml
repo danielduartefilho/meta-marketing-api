@@ -1,200 +1,90 @@
 openapi: 3.1.0
 info:
-  title: Meta Marketing API Connector
-  version: '1.0'
+  title: Meta Marketing API
+  version: '22.0'
   description: |
-    Conector para acessar métricas e insights do Meta Marketing API.
-    
-    Endpoints Validados:
-    - /insights: Métricas básicas e de vídeo
-    - /ads/{ad_id}/creative: Análise de criativos
-    - /audiences/insights: Análise de público
-    
-    Métricas Funcionais:
-    - Básicas: impressions, reach, spend, clicks, ctr, cpc
-    - Vídeo: video_p25/50/75/95/100_watched_actions
-    - Engajamento: video_avg_time_watched_actions, video_play_actions
-    
-    Sistema de Análise:
-    - Retenção por pontos (25%, 50%, 75%, 95%, 100%)
-    - Tempo médio de visualização
-    - Análise por plataforma
+    Meta Marketing API para análise de performance de anúncios.
+    Requer permissões: ads_read, ads_management_read_only, pages_read_engagement
 
 servers:
   - url: https://graph.facebook.com/v22.0
     description: Meta Graph API v22.0
 
+security:
+  - bearerAuth: []
+
 paths:
+  /me/accounts:
+    get:
+      operationId: getAccounts
+      summary: Lista páginas disponíveis
+      description: Retorna a lista de páginas que o usuário tem acesso
+      responses:
+        '200':
+          description: Success. Retorna página Wiemspro Brasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "102264027940184"
+                        name:
+                          type: string
+                          example: "Wiemspro Brasil"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '429':
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /act_{account_id}/insights:
     get:
       operationId: getInsights
-      summary: Get unified insights for any level
+      summary: Métricas de performance
       description: |
-        Get comprehensive performance metrics and insights.
-        
-        Métricas de Retenção (/insights):
-        - video_p25_watched_actions: Visualizações até 25%
-        - video_p50_watched_actions: Visualizações até 50%
-        - video_p75_watched_actions: Visualizações até 75%
-        - video_p95_watched_actions: Visualizações até 95%
-        - video_p100_watched_actions: Visualizações completas
-        
-        Métricas de Engajamento (/insights):
-        - video_avg_time_watched_actions: Tempo médio assistido
-        - video_play_actions: Total de plays
-        - video_continuous_2_sec_watched_actions: Views >2s
-        - video_30_sec_watched_actions: Views >30s
+        Retorna métricas de performance para a conta.
+        Suporta breakdowns por formato e demografia.
       parameters:
         - name: account_id
           in: path
           required: true
-          description: Ad account ID
           schema:
             type: string
             pattern: '^act_\d+$'
-        - name: fields
-          in: query
-          required: true
-          description: Comma-separated list of metrics
-          schema:
-            type: string
-            default: "impressions,reach,spend,clicks,ctr,cpc,actions"
-        - name: breakdowns
-          in: query
-          description: |
-            Breakdowns Suportados (máximo 2-3):
-            - publisher_platform: facebook, instagram
-            - device_platform: desktop, mobile
-            - age, gender: Demografia
-          schema:
-            type: string
-            example: "publisher_platform,age,gender"
+            example: "906594379912215"
         - name: date_preset
           in: query
-          description: Limite de 30 dias conforme recomendação
+          description: Período predefinido para análise
           schema:
             type: string
-            enum: [today, yesterday, last_7d, last_30d]
-            default: "last_30d"
-        - name: filtering
-          in: query
-          description: Priorizar filtros por ID
-          schema:
-            type: string
-            example: '[{"field":"campaign.id","operator":"EQUAL","value":"CAMPAIGN_ID"}]'
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UnifiedInsights"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/ads/{ad_id}/creative:
-    get:
-      operationId: getCreativeAnalysis
-      summary: Get creative analysis metrics
-      description: |
-        Análise de Criativos:
-        
-        Informações básicas:
-        - Tipo (imagem, vídeo, carrossel)
-        - Call-to-action e links
-        - Especificações de mídia
-        
-        Métricas de engajamento:
-        - Curtidas e comentários
-        - Compartilhamentos
-        - Cliques em links
-        - Visualizações de vídeo
-        - Tempo médio de visualização
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-            pattern: '^act_\d+$'
-        - name: ad_id
-          in: path
-          required: true
-          description: Ad ID
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreativeAnalysis"
-        '400':
-          $ref: "#/components/responses/BadRequest"
-        '401':
-          $ref: "#/components/responses/Unauthorized"
-        '429':
-          $ref: "#/components/responses/RateLimitExceeded"
-
-  /act_{account_id}/audiences/insights:
-    get:
-      operationId: getAudienceInsights
-      summary: Get audience insights and metrics
-      description: |
-        Análise de Público:
-        
-        Demografia:
-        - Idade e gênero
-        - País e região
-        - Interesses
-        - Comportamentos
-        
-        Métricas por segmento:
-        - Alcance e frequência
-        - CTR e custo
-        - Conversões
-        - ROAS por segmento
-      parameters:
-        - name: account_id
-          in: path
-          required: true
-          description: Ad account ID
-          schema:
-            type: string
-            pattern: '^act_\d+$'
-        - name: fields
-          in: query
-          required: true
-          description: Demographic and performance metrics
-          schema:
-            type: string
-            default: "age,gender,country,region,interests,behaviors,reach,frequency,ctr,spend"
+            enum: [today, yesterday, last_3d, last_7d, last_30d, this_month, last_month]
+            default: "last_7d"
         - name: breakdowns
           in: query
-          description: Máximo 2-3 breakdowns
+          description: Breakdowns para análise detalhada (máximo 2-3)
           schema:
             type: string
-            default: "publisher_platform,age,gender"
-        - name: date_preset
-          in: query
-          description: Limite de 30 dias
-          schema:
-            type: string
-            enum: [last_7d, last_30d]
-            default: "last_30d"
+            example: "publisher_platform,platform_position"
       responses:
         '200':
           description: Success
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AudienceInsights"
+                $ref: "#/components/schemas/InsightsResponse"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -207,10 +97,9 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      description: Meta API Access Token (requires ads_read permission)
 
   schemas:
-    UnifiedInsights:
+    InsightsResponse:
       type: object
       properties:
         data:
@@ -221,1278 +110,80 @@ components:
               date_start:
                 type: string
                 format: date
+              date_end:
+                type: string
+                format: date
+              publisher_platform:
+                type: string
+                example: "instagram"
+              platform_position:
+                type: string
+                enum: [story, reel, feed]
               impressions:
-                type: string
-              reach:
-                type: string
-              spend:
-                type: string
-              clicks:
-                type: string
-              ctr:
-                type: string
-              cpc:
-                type: string
-              video_metrics:
-                type: object
-                properties:
-                  retention:
-                    type: object
-                    properties:
-                      p25:
-                        type: integer
-                      p50:
-                        type: integer
-                      p75:
-                        type: integer
-                      p95:
-                        type: integer
-                      p100:
-                        type: integer
-                  engagement:
-                    type: object
-                    properties:
-                      avg_time:
-                        type: number
-                      plays:
-                        type: integer
-                      continuous_2s:
-                        type: integer
-                      watched_30s:
-                        type: integer
-
-    CreativeAnalysis:
-      type: object
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-          enum: [IMAGE, VIDEO, CAROUSEL]
-        call_to_action:
-          type: object
-          properties:
-            type:
-              type: string
-            value:
-              type: object
-        engagement:
-          type: object
-          properties:
-            likes:
-              type: integer
-            comments:
-              type: integer
-            shares:
-              type: integer
-            link_clicks:
-              type: integer
-        video_metrics:
-          type: object
-          properties:
-            views:
-              type: integer
-            avg_watch_time:
-              type: number
-            sound_on_views:
-              type: integer
-            completion_rate:
-              type: number
-            engagement_rate:
-              type: number
-            viewer_retention:
-              type: array
-              items:
-                type: object
-                properties:
-                  percentage:
-                    type: integer
-                  viewers:
-                    type: integer
-
-    AudienceInsights:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              demographics:
-                type: object
-                properties:
-                  age:
-                    type: string
-                  gender:
-                    type: string
-                  country:
-                    type: string
-                  region:
-                    type: string
-                  interests:
-                    type: array
-                    items:
-                      type: string
-                  behaviors:
-                    type: array
-                    items:
-                      type: string
-              metrics:
-                type: object
-                properties:
-                  reach:
-                    type: integer
-                  frequency:
-                    type: number
-                  ctr:
-                    type: number
-                  spend:
-                    type: number
-                  actions:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        action_type:
-                          type: string
-                        value:
-                          type: integer
-                  roas:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        segment:
-                          type: string
-                        value:
-                          type: number
-
-    Error:
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            message:
-              type: string
-            type:
-              type: string
-            code:
-              type: integer
-            fbtrace_id:
-              type: string
-
-    CampaignList:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/Campaign"
-        paging:
-          type: object
-          properties:
-            cursors:
-              type: object
-              properties:
-                before:
-                  type: string
-                after:
-                  type: string
-
-    Campaign:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Campaign ID
-          example: "120218493633420149"
-        name:
-          type: string
-          description: Campaign name
-          example: "Website Traffic Campaign"
-        status:
-          type: string
-          description: Campaign status
-          enum: ["ACTIVE", "PAUSED", "DELETED", "ARCHIVED"]
-          example: "ACTIVE"
-        objective:
-          type: string
-          description: Campaign objective
-          enum: ["LINK_CLICKS", "POST_ENGAGEMENT", "VIDEO_VIEWS", "BRAND_AWARENESS", "REACH"]
-          example: "LINK_CLICKS"
-        daily_budget:
-          type: integer
-          description: Daily budget in cents
-          example: 5000
-        lifetime_budget:
-          type: integer
-          description: Lifetime budget in cents
-          example: 50000
-        bid_strategy:
-          type: string
-          description: Bidding strategy
-          enum: ["LOWEST_COST_WITH_BID_CAP", "LOWEST_COST_WITHOUT_CAP"]
-          example: "LOWEST_COST_WITH_BID_CAP"
-
-    InsightData:
-      type: object
-      properties:
-        impressions:
-          type: string
-          description: Number of impressions
-          example: "631"
-        reach:
-          type: string
-          description: Number of people who saw the ads
-          example: "589"
-        spend:
-          type: string
-          description: Amount spent in the account currency
-          example: "15.95"
-        inline_link_clicks:
-          type: string
-          description: Number of clicks on links within the ad
-          example: "42"
-        inline_link_click_ctr:
-          type: string
-          description: Click-through rate for links within the ad (percentage)
-          example: "6.66"
-        actions:
-          type: array
-          description: Array of actions taken on the ad
-          items:
-            type: object
-            properties:
-              action_type:
-                type: string
-                description: Type of action
-                example: "post_engagement"
-              value:
-                type: string
-                description: Number of actions
-                example: "250"
-        date_start:
-          type: string
-          format: date
-          description: Start date of the insights period
-          example: "2025-03-06"
-        date_stop:
-          type: string
-          format: date
-          description: End date of the insights period
-          example: "2025-03-12"
-
-    AudienceInsights:
-      type: object
-      properties:
-        age_distribution:
-          type: array
-          description: Age distribution of the audience
-          items:
-            type: object
-            properties:
-              age:
-                type: string
-                description: Age range
-                example: "25-34"
-              percentage:
-                type: number
-                description: Percentage of the audience in this age range
-                example: 0.34
-        gender_distribution:
-          type: array
-          description: Gender distribution of the audience
-          items:
-            type: object
-            properties:
-              gender:
-                type: string
-                description: Gender
-                example: "male"
-              percentage:
-                type: number
-                description: Percentage of the audience with this gender
-                example: 0.56
-        country_distribution:
-          type: array
-          description: Country distribution of the audience
-          items:
-            type: object
-            properties:
-              country:
-                type: string
-                description: Country code
-                example: "US"
-              percentage:
-                type: number
-                description: Percentage of the audience in this country
-                example: 0.23
-        region_distribution:
-          type: array
-          description: Region distribution of the audience
-          items:
-            type: object
-            properties:
-              region:
-                type: string
-                description: Region name
-                example: "California"
-              percentage:
-                type: number
-                description: Percentage of the audience in this region
-                example: 0.17
-
-    PageAccountList:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/PageAccount"
-        paging:
-          $ref: "#/components/schemas/Paging"
-
-    PageAccount:
-      type: object
-      properties:
-        access_token:
-          type: string
-          description: Page access token
-          example: "EAAZAw4RLZCHicBANNIz..."
-        category:
-          type: string
-          description: Page category
-          example: "Website"
-        name:
-          type: string
-          description: Page name
-          example: "My Page"
-        id:
-          type: string
-          description: Page ID
-          example: "102264027940184"
-        tasks:
-          type: array
-          description: Page tasks
-          items:
-            type: string
-          example: ["ANALYZE", "ADVERTISE", "CREATE_CONTENT"]
-
-    Paging:
-      type: object
-      properties:
-        cursors:
-          type: object
-          properties:
-            before:
-              type: string
-            after:
-              type: string
-
-    AdSetList:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/AdSet"
-        paging:
-          $ref: "#/components/schemas/Paging"
-
-    AdSet:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Ad set ID
-          example: "23850123640320149"
-        name:
-          type: string
-          description: Ad set name
-          example: "Lookalike Audience - São Paulo"
-        status:
-          type: string
-          description: Ad set status
-          enum: [ACTIVE, PAUSED, ARCHIVED, DELETED]
-          example: "ACTIVE"
-        campaign_id:
-          type: string
-          description: Campaign ID
-          example: "120218493633420149"
-        daily_budget:
-          type: integer
-          description: Daily budget in account currency (x100)
-          example: 5000
-        lifetime_budget:
-          type: integer
-          description: Lifetime budget in account currency (x100)
-          example: 50000
-        targeting:
-          type: object
-          description: Targeting specifications
-          properties:
-            age_min:
-              type: integer
-              example: 25
-            age_max:
-              type: integer
-              example: 55
-            genders:
-              type: array
-              items:
                 type: integer
-                enum: [1, 2]  # 1 = male, 2 = female
-            geo_locations:
-              type: object
-              properties:
-                countries:
-                  type: array
-                  items:
-                    type: string
-                regions:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                      name:
-                        type: string
-            interests:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-            behaviors:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-        bid_strategy:
-          type: string
-          description: Bidding strategy
-          enum: [LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP]
-          example: "LOWEST_COST_WITHOUT_CAP"
-        billing_event:
-          type: string
-          description: The billing event type
-          enum: [APP_INSTALLS, CLICKS, IMPRESSIONS, LINK_CLICKS, NONE, OFFER_CLAIMS, PAGE_LIKES, POST_ENGAGEMENT, THRUPLAY, PURCHASE]
-          example: "IMPRESSIONS"
-
-    Ad:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Ad ID
-          example: "120218493633420149"
-        name:
-          type: string
-          description: Ad name
-          example: "Produto X - Vídeo Principal"
-        creative:
-          type: object
-          properties:
-            id:
-              type: string
-              description: Creative ID
-              example: "120218493633420150"
-            title:
-              type: string
-              description: Creative title
-              example: "Conheça o Produto X"
-            body:
-              type: string
-              description: Creative body text
-              example: "Descubra como o Produto X pode transformar sua vida!"
-            image_url:
-              type: string
-              description: URL of the image creative
-              example: "https://scontent.xx.fbcdn.net/v/example.jpg"
-            video_id:
-              type: string
-              description: ID of the video creative
-              example: "120218493633420151"
-            thumbnail_url:
-              type: string
-              description: URL of the creative thumbnail
-              example: "https://scontent.xx.fbcdn.net/v/example.jpg"
-        status:
-          type: string
-          description: Ad status
-          enum: [ACTIVE, PAUSED, DELETED, ARCHIVED, DISAPPROVED]
-          example: "ACTIVE"
-        effective_status:
-          type: string
-          description: Effective status of the ad
-          enum: [ACTIVE, PAUSED, DELETED, ARCHIVED, DISAPPROVED, IN_PROCESS, WITH_ISSUES]
-          example: "ACTIVE"
-        preview_shareable_link:
-          type: string
-          description: URL to preview the ad
-          example: "https://www.facebook.com/ads/archive/render_ad/123456789"
-
-    LookalikeAudienceInsights:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Lookalike audience ID
-          example: "120208690219500149"
-        name:
-          type: string
-          description: Lookalike audience name
-          example: "Lookalike Audience - São Paulo"
-        subtype:
-          type: string
-          description: Lookalike audience subtype
-          example: "similarity"
-        delivery_status:
-          type: string
-          description: Delivery status of the audience
-          enum: [ACTIVE, PAUSED, DELETED, ARCHIVED]
-          example: "ACTIVE"
-        lookalike_spec:
-          type: object
-          description: Lookalike audience specification
-          properties:
-            seed_audience:
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Seed audience ID
-                  example: "120208690219500149"
-                name:
-                  type: string
-                  description: Seed audience name
-                  example: "Seed Audience - São Paulo"
-            ratio:
-              type: integer
-              description: Ratio of the lookalike audience
-              example: 1
-            target_country:
-              type: string
-              description: Target country for the lookalike audience
-              example: "BR"
-
-    BudgetInsights:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              spend:
-                type: string
-                description: Total amount spent
-                example: "1147.20"
-              cost_per_action_type:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    action_type:
-                      type: string
-                      description: Type of action
-                      example: "onsite_conversion.lead"
-                    value:
-                      type: string
-                      description: Cost per action
-                      example: "95.60"
-              ctr:
-                type: string
-                description: Click-through rate
-                example: "1.52"
-              cpc:
-                type: string
-                description: Cost per click
-                example: "1.08"
-              actions:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    action_type:
-                      type: string
-                      description: Type of action
-                      example: "landing_page_view"
-                    value:
-                      type: string
-                      description: Number of actions
-                      example: "76"
-              website_purchase_roas:
-                type: string
-                description: Return on ad spend for website purchases
-                example: "0.61"
-              date_start:
-                type: string
-                format: date
-                example: "2025-03-06"
-              date_stop:
-                type: string
-                format: date
-                example: "2025-03-12"
-              breakdowns:
-                type: object
-                properties:
-                  age:
-                    type: string
-                    example: "25-34"
-                  gender:
-                    type: string
-                    example: "female"
-                  region:
-                    type: string
-                    example: "São Paulo"
-                  publisher_platform:
-                    type: string
-                    example: "facebook"
-                  device_platform:
-                    type: string
-                    example: "mobile"
-
-    PerformanceInsights:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              impressions:
-                type: string
-                description: Number of impressions
-                example: "50000"
+                example: 13587
               reach:
-                type: string
-                description: Number of unique users reached
-                example: "30000"
+                type: integer
+                example: 11145
               spend:
-                type: string
-                description: Amount spent
-                example: "5000.00"
+                type: number
+                example: 243.78
               ctr:
-                type: string
-                description: Click-through rate
-                example: "2.3"
+                type: number
+                example: 18.43
               cpc:
-                type: string
-                description: Cost per click
-                example: "0.50"
-              cpm:
-                type: string
-                description: Cost per 1000 impressions
-                example: "10.00"
-              conversions:
-                type: string
-                description: Number of conversions
-                example: "150"
-              date_start:
-                type: string
-                format: date
-                example: "2025-03-13"
-              date_stop:
-                type: string
-                format: date
-                example: "2025-03-13"
+                type: number
+                example: 0.10
+              video_p25_watched_actions:
+                type: integer
+                example: 800
+              video_p50_watched_actions:
+                type: integer
+                example: 600
+              video_p75_watched_actions:
+                type: integer
+                example: 400
+              video_p95_watched_actions:
+                type: integer
+                example: 200
+              video_avg_time_watched_actions:
+                type: number
+                example: 3.0
 
-    AccountTrends:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            best_performing_creatives:
-              type: array
-              items:
-                type: object
-                properties:
-                  creative_id:
-                    type: string
-                    description: Creative ID
-                    example: "120218493633420149"
-                  name:
-                    type: string
-                    description: Creative name
-                    example: "Summer Sale Video"
-                  performance_score:
-                    type: string
-                    description: Performance score (0-100)
-                    example: "85"
-                  metrics:
-                    type: object
-                    properties:
-                      ctr:
-                        type: string
-                        example: "3.2"
-                      conversion_rate:
-                        type: string
-                        example: "2.1"
-            best_performing_audiences:
-              type: array
-              items:
-                type: object
-                properties:
-                  audience_id:
-                    type: string
-                    description: Audience ID
-                    example: "120208690219500149"
-                  name:
-                    type: string
-                    description: Audience name
-                    example: "Lookalike - High Value Customers"
-                  performance_score:
-                    type: string
-                    description: Performance score (0-100)
-                    example: "92"
-                  metrics:
-                    type: object
-                    properties:
-                      reach:
-                        type: string
-                        example: "50000"
-                      conversion_rate:
-                        type: string
-                        example: "2.8"
-            campaigns_to_optimize:
-              type: array
-              items:
-                type: object
-                properties:
-                  campaign_id:
-                    type: string
-                    description: Campaign ID
-                    example: "120218493633420149"
-                  name:
-                    type: string
-                    description: Campaign name
-                    example: "Website Traffic Campaign"
-                  optimization_score:
-                    type: string
-                    description: Optimization score (0-100)
-                    example: "65"
-                  recommendations:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        type:
-                          type: string
-                          description: Type of recommendation
-                          example: "BUDGET_OPTIMIZATION"
-                        description:
-                          type: string
-                          description: Detailed recommendation
-                          example: "Increase budget by 20% to capture more conversions"
-                        impact:
-                          type: string
-                          description: Estimated impact
-                          example: "HIGH"
-                        metrics_to_improve:
-                          type: array
-                          items:
-                            type: string
-                          example: ["cpc", "ctr", "cost_per_action"]
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Invalid or expired access token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
 
-    AccountTrendsPerformance:
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            best_performing_creatives:
-              type: array
-              description: Best performing ads based on creative performance
-              items:
-                type: object
-                properties:
-                  ad_id:
-                    type: string
-                    description: Ad ID
-                    example: "120218493633420149"
-                  name:
-                    type: string
-                    description: Ad name
-                    example: "Summer Sale Video"
-                  creative:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: Creative ID
-                        example: "120218493633420150"
-                      name:
-                        type: string
-                        description: Creative name
-                        example: "Summer Sale Video Creative"
-                      type:
-                        type: string
-                        description: Creative type
-                        example: "video"
-                  performance_metrics:
-                    type: object
-                    properties:
-                      spend:
-                        type: string
-                        description: Amount spent
-                        example: "573.60"
-                      impressions:
-                        type: string
-                        description: Number of impressions
-                        example: "25000"
-                      ctr:
-                        type: string
-                        description: Click-through rate
-                        example: "2.3"
-                      cpc:
-                        type: string
-                        description: Cost per click
-                        example: "1.45"
-                      actions:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            action_type:
-                              type: string
-                              description: Type of action
-                              example: "video_view"
-                            value:
-                              type: string
-                              description: Number of actions
-                              example: "16618"
-            best_performing_audiences:
-              type: array
-              description: Best performing audience segments based on demographic insights
-              items:
-                type: object
-                properties:
-                  segment:
-                    type: object
-                    properties:
-                      age:
-                        type: string
-                        description: Age range
-                        example: "25-34"
-                      gender:
-                        type: string
-                        description: Gender
-                        example: "female"
-                      device_platform:
-                        type: string
-                        description: Device type
-                        example: "mobile"
-                  performance_metrics:
-                    type: object
-                    properties:
-                      impressions:
-                        type: string
-                        description: Number of impressions
-                        example: "50000"
-                      reach:
-                        type: string
-                        description: Number of unique users reached
-                        example: "30000"
-                      spend:
-                        type: string
-                        description: Amount spent
-                        example: "1147.20"
-                      ctr:
-                        type: string
-                        description: Click-through rate
-                        example: "1.52"
-                      actions:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            action_type:
-                              type: string
-                              description: Type of action
-                              example: "link_click"
-                            value:
-                              type: string
-                              description: Number of actions
-                              example: "2500"
-            campaigns_to_optimize:
-              type: array
-              description: Campaigns that need optimization based on performance metrics
-              items:
-                type: object
-                properties:
-                  campaign_id:
-                    type: string
-                    description: Campaign ID
-                    example: "120218493633420149"
-                  name:
-                    type: string
-                    description: Campaign name
-                    example: "Website Traffic Campaign"
-                  performance_metrics:
-                    type: object
-                    properties:
-                      spend:
-                        type: string
-                        description: Amount spent
-                        example: "5000.00"
-                      cpc:
-                        type: string
-                        description: Cost per click (high indicates inefficiency)
-                        example: "2.50"
-                      ctr:
-                        type: string
-                        description: Click-through rate (low indicates poor targeting/creative)
-                        example: "0.8"
-                      cost_per_action:
-                        type: string
-                        description: Cost per conversion (high indicates optimization needed)
-                        example: "45.00"
-                  optimization_recommendations:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        type:
-                          type: string
-                          description: Type of recommendation
-                          example: "BUDGET_OPTIMIZATION"
-                        description:
-                          type: string
-                          description: Detailed recommendation
-                          example: "Increase budget by 20% to capture more conversions"
-                        impact:
-                          type: string
-                          description: Estimated impact of the recommendation
-                          example: "HIGH"
-                        metrics_to_improve:
-                          type: array
-                          items:
-                            type: string
-                          example: ["cpc", "ctr", "cost_per_action"]
-
-    DemographicInsights:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              impressions:
-                type: string
-                description: Number of impressions
-                example: "50000"
-              spend:
-                type: string
-                description: Amount spent
-                example: "1147.20"
-              ctr:
-                type: string
-                description: Click-through rate
-                example: "1.52"
-              cpc:
-                type: string
-                description: Cost per click
-                example: "1.08"
-              cpm:
-                type: string
-                description: Cost per 1000 impressions
-                example: "22.94"
-              actions:
-                type: string
-                description: Total number of actions
-                example: "760"
-              age:
-                type: string
-                description: Age range
-                example: "25-34"
-              gender:
-                type: string
-                description: Gender
-                example: "female"
-              device_platform:
-                type: string
-                description: Device type
-                example: "mobile"
-              date_start:
-                type: string
-                format: date
-                example: "2025-03-06"
-              date_stop:
-                type: string
-                format: date
-                example: "2025-03-12"
-
-    ConversionInsights:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              impressions:
-                type: string
-                description: Number of impressions
-                example: "50000"
-              spend:
-                type: string
-                description: Amount spent
-                example: "1147.20"
-              ctr:
-                type: string
-                description: Click-through rate
-                example: "1.52"
-              cpc:
-                type: string
-                description: Cost per click
-                example: "1.08"
-              cpm:
-                type: string
-                description: Cost per 1000 impressions
-                example: "22.94"
-              action_type:
-                type: string
-                description: Type of action
-                example: "onsite_conversion.lead"
-              value:
-                type: string
-                description: Number of actions
-                example: "26"
-              device_platform:
-                type: string
-                description: Device type
-                example: "mobile"
-              date_start:
-                type: string
-                format: date
-                example: "2025-03-06"
-              date_stop:
-                type: string
-                format: date
-                example: "2025-03-12"
-
-    AdsPerformance:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                description: Ad ID
-                example: "120218493633420149"
-              name:
-                type: string
-                description: Ad name
-                example: "Summer Sale Video"
-              creative:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: Creative ID
-                    example: "120218493633420150"
-                  name:
-                    type: string
-                    description: Creative name
-                    example: "Summer Sale Video Creative"
-                  type:
-                    type: string
-                    description: Creative type
-                    example: "video"
-              spend:
-                type: string
-                description: Amount spent
-                example: "573.60"
-              impressions:
-                type: string
-                description: Number of impressions
-                example: "25000"
-              ctr:
-                type: string
-                description: Click-through rate
-                example: "2.3"
-              cpc:
-                type: string
-                description: Cost per click
-                example: "1.45"
-              actions:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    action_type:
-                      type: string
-                      description: Type of action
-                      example: "video_view"
-                    value:
-                      type: string
-                      description: Number of actions
-                      example: "16618"
-
-    CampaignInsights:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              impressions:
-                type: string
-                description: Number of impressions
-                example: "50000"
-              reach:
-                type: string
-                description: Number of unique users reached
-                example: "30000"
-              spend:
-                type: string
-                description: Amount spent
-                example: "1147.20"
-              inline_link_clicks:
-                type: string
-                description: Number of clicks on links within the ad
-                example: "2500"
-              inline_link_click_ctr:
-                type: string
-                description: Click-through rate for links within the ad
-                example: "5.0"
-              actions:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    action_type:
-                      type: string
-                      description: Type of action
-                      example: "link_click"
-                    value:
-                      type: string
-                      description: Number of actions
-                      example: "2500"
-              date_start:
-                type: string
-                format: date
-                example: "2025-02-12"
-              date_stop:
-                type: string
-                format: date
-                example: "2025-03-13"
-
-    UnifiedInsights:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            properties:
-              impressions:
-                type: string
-                description: Number of impressions
-                example: "50000"
-              reach:
-                type: string
-                description: Number of unique users reached
-                example: "30000"
-              spend:
-                type: string
-                description: Amount spent
-                example: "1147.20"
-              inline_link_clicks:
-                type: string
-                description: Number of clicks on links within the ad
-                example: "2500"
-              inline_link_click_ctr:
-                type: string
-                description: Click-through rate for links within the ad
-                example: "5.0"
-              actions:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    action_type:
-                      type: string
-                      description: Type of action
-                      example: "link_click"
-                    value:
-                      type: string
-                      description: Number of actions
-                      example: "2500"
-              date_start:
-                type: string
-                format: date
-                example: "2025-02-12"
-              date_stop:
-                type: string
-                format: date
-                example: "2025-03-13"
-              breakdowns:
-                type: object
-                properties:
-                  age:
-                    type: string
-                    example: "25-34"
-                  gender:
-                    type: string
-                    example: "female"
-                  device_platform:
-                    type: string
-                    example: "mobile"
-
-responses:
-  BadRequest:
-    description: Invalid request parameters
-    content:
-      application/json:
-        schema:
-          $ref: "#/components/schemas/Error"
-  Unauthorized:
-    description: Invalid or expired access token
-    content:
-      application/json:
-        schema:
-          $ref: "#/components/schemas/Error"
-  RateLimitExceeded:
-    description: Rate limit exceeded
-    headers:
-      Retry-After:
-        $ref: "#/components/headers/RetryAfter"
-    content:
-      application/json:
-        schema:
-          $ref: "#/components/schemas/Error"
-
-headers:
-  BusinessUseCaseUsage:
-    description: Usage stats for business use case
-    schema:
-      type: string
-  RateLimitReset:
-    description: Time until rate limit reset in seconds
-    schema:
-      type: integer
-  CacheControl:
-    description: Cache control directives
-    schema:
-      type: string
-  RetryAfter:
-    description: Time to wait before retrying in seconds
-    schema:
-      type: integer
+  headers:
+    BusinessUseCaseUsage:
+      description: Usage stats for business use case
+      schema:
+        type: string
+    RateLimitReset:
+      description: Time until rate limit reset in seconds
+      schema:
+        type: integer
+    CacheControl:
+      description: Cache control directives
+      schema:
+        type: string

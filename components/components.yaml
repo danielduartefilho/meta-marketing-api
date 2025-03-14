@@ -2,34 +2,18 @@ headers:
   BusinessUseCaseUsage:
     description: Usage stats for business use case
     schema:
-      type: object
-      properties:
-        business_use_case:
-          type: string
-          description: Current business use case
-          enum: [CAMPAIGNS_MANAGEMENT, INSIGHTS_ANALYSIS, CREATIVE_MANAGEMENT]
-        points_used:
-          type: integer
-          description: API points used in current period
-        points_remaining:
-          type: integer
-          description: API points remaining in current period
-        reset_time:
-          type: string
-          format: date-time
-          description: When points will reset
-
+      type: string
+      example: "business_use_case=CAMPAIGNS_MANAGEMENT;points_used=10;points_remaining=8990"
   RateLimitReset:
     description: Time until rate limit reset in seconds
     schema:
       type: integer
-
+      example: 300
   CacheControl:
-    description: Cache control directives for optimização
+    description: Cache control directives
     schema:
       type: string
-      default: "public, max-age=300"
-
+      example: "public, max-age=300"
   RetryAfter:
     description: Time to wait before retrying in seconds
     schema:
@@ -76,12 +60,165 @@ schemas:
           code:
             type: integer
             description: Error code
+            example: 400
           message:
             type: string
             description: Error message
+            example: "Invalid parameter value"
           type:
             type: string
             description: Error type
+            example: "OAuthException"
+
+  InsightsMetrics:
+    type: object
+    properties:
+      impressions:
+        type: integer
+        description: Total de impressões
+        example: 69488
+      reach:
+        type: integer
+        description: Alcance único
+        example: 33992
+      spend:
+        type: number
+        description: Investimento em BRL
+        example: 243.78
+      ctr:
+        type: number
+        description: Taxa de cliques (%)
+        example: 18.43
+      cpc:
+        type: number
+        description: Custo por clique
+        example: 0.10
+
+  VideoMetrics:
+    type: object
+    properties:
+      video_p25_watched_actions:
+        type: integer
+        description: Visualizações até 25%
+        example: 800
+      video_p50_watched_actions:
+        type: integer
+        description: Visualizações até 50%
+        example: 600
+      video_p75_watched_actions:
+        type: integer
+        description: Visualizações até 75%
+        example: 400
+      video_p95_watched_actions:
+        type: integer
+        description: Visualizações até 95%
+        example: 200
+      video_avg_time_watched_actions:
+        type: number
+        description: Tempo médio de visualização (segundos)
+        example: 3.0
+
+  FormatPerformance:
+    type: object
+    properties:
+      stories:
+        type: object
+        description: Métricas de Stories
+        properties:
+          impressions:
+            type: integer
+            example: 13587
+          reach:
+            type: integer
+            example: 11145
+          spend:
+            type: number
+            example: 243.78
+          cpm:
+            type: number
+            example: 17.94
+          engagement_rate:
+            type: number
+            example: 18.43
+          retention_50:
+            type: number
+            example: 57.8
+          retention_95:
+            type: number
+            example: 24.1
+          avg_watch_time:
+            type: number
+            example: 3.0
+      reels:
+        type: object
+        description: Métricas de Reels
+        properties:
+          impressions:
+            type: integer
+            example: 3761
+          reach:
+            type: integer
+            example: 3720
+          spend:
+            type: number
+            example: 27.06
+          cpm:
+            type: number
+            example: 7.20
+          engagement_rate:
+            type: number
+            example: 31.16
+          retention_50:
+            type: number
+            example: 43.1
+          retention_95:
+            type: number
+            example: 18.3
+          avg_watch_time:
+            type: number
+            example: 4.0
+
+  AudienceInsights:
+    type: object
+    properties:
+      age_gender:
+        type: array
+        items:
+          type: object
+          properties:
+            age_range:
+              type: string
+              example: "25-34"
+            gender:
+              type: string
+              enum: [1, 2]
+              description: "1=mulheres, 2=homens"
+            reach:
+              type: integer
+              example: 7831
+            impressions:
+              type: integer
+              example: 9077
+            engagement_rate:
+              type: number
+              example: 17.44
+            cpe:
+              type: number
+              example: 0.06
+      regions:
+        type: array
+        items:
+          type: object
+          properties:
+            region:
+              type: string
+              example: "Rio de Janeiro"
+            engagement_rate:
+              type: number
+              example: 27.23
+            cpe:
+              type: number
+              example: 0.08
 
   Campaign:
     type: object

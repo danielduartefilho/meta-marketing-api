@@ -1,10 +1,11 @@
 openapi: 3.1.0
 info:
-  title: Meta Marketing API
+  title: Meta Marketing API Connector
   version: '22.0'
   description: |
-    Meta Marketing API para análise de performance de anúncios.
-    Requer permissões: ads_read, ads_management_read_only, pages_read_engagement
+    Conector para a API de Marketing do Meta (Facebook), versão v22.0.
+    Fornece acesso a dados de campanhas, conjuntos de anúncios, anúncios e métricas de performance.
+    Requer permissões: ads_management, ads_read, pages_read_engagement
 
 servers:
   - url: https://graph.facebook.com/v22.0
@@ -14,14 +15,33 @@ security:
   - bearerAuth: []
 
 paths:
-  /me/accounts:
+  /me/adaccounts:
     get:
-      operationId: getAccounts
-      summary: Lista páginas disponíveis
-      description: Retorna a lista de páginas que o usuário tem acesso
+      operationId: getAdAccounts
+      summary: List ad accounts
+      description: |
+        Get a list of ad accounts that the user has access to.
+        Required permissions: ads_management
+      tags:
+        - Accounts
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: id,name,account_status
       responses:
-        '200':
-          description: Success. Retorna página Wiemspro Brasil
+        "200":
+          description: Success. Returns a list of ad accounts
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
           content:
             application/json:
               schema:
@@ -34,14 +54,447 @@ paths:
                       properties:
                         id:
                           type: string
-                          example: "102264027940184"
+                          description: Ad account ID with act_ prefix
+                          example: act_906594379912215
                         name:
                           type: string
-                          example: "Wiemspro Brasil"
-        '401':
+                          description: Ad account name
+                          example: My Ad Account
+                        account_status:
+                          type: integer
+                          description: Account status (1 = active, 2 = disabled)
+                          example: 1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
           $ref: "#/components/responses/Unauthorized"
-        '429':
+        "429":
           $ref: "#/components/responses/RateLimitExceeded"
+
+  /me/accounts:
+    get:
+      operationId: getPageAccounts
+      summary: Get page accounts
+      description: |
+        List available pages with engagement metrics.
+        Called internally to get page ID 102264027940184.
+        Required permissions: pages_show_list, pages_read_engagement
+      tags:
+        - Authentication
+      parameters:
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: id,name,category,category_list,tasks,engagement{count_lifetime},posts.limit(1){insights},feed{likes,comments}
+      responses:
+        "200":
+          description: Success. Returns page list with metrics
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              schema:
+                type: string
+                default: private, max-age=86400
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageAccountList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/campaigns:
+    get:
+      operationId: getCampaigns
+      summary: List campaigns
+      description: |
+        Get a list of all campaigns for the specified ad account.
+        Required permissions: ads_management
+        Note: Use the numeric ID from /me/adaccounts (without act_ prefix)
+      tags:
+        - Campaigns
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only, without act_ prefix)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Comma-separated list of fields to return
+          schema:
+            type: string
+            default: id,name,status,objective,daily_budget,lifetime_budget
+        - name: limit
+          in: query
+          description: Number of records to return per request
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: after
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success. Returns a list of campaigns
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/insights/creative_performance:
+    get:
+      operationId: getCreativeInsights
+      summary: Performance dos criativos
+      description: |
+        Métricas de performance dos criativos.
+        Período padrão: last_7d
+        Métricas: impressions, clicks, ctr, cpc, spend
+      tags:
+        - Insights
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: ID da conta de anúncio (sem prefixo act_)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Período pré-definido para análise
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_7d
+      responses:
+        "200":
+          description: Success. Retorna métricas de performance dos criativos
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreativeInsights"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/insights/cost_benefit:
+    get:
+      operationId: getCostBenefitInsights
+      summary: Análise de custo-benefício
+      description: |
+        Métricas de custo-benefício e ROI.
+        Período padrão: last_7d
+        Métricas: spend, conversions, cost_per_conversion
+        Nota: Requer pixel configurado
+      tags:
+        - Insights
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: ID da conta de anúncio (sem prefixo act_)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Período pré-definido para análise
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_7d
+      responses:
+        "200":
+          description: Success. Retorna análise de custo-benefício
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CostBenefitInsights"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/insights/instagram:
+    get:
+      operationId: getInstagramInsights
+      summary: Métricas do Instagram
+      description: |
+        Métricas básicas do Instagram.
+        Período padrão: last_7d
+        Métricas validadas: impressions (69,488), reach (33,992)
+      tags:
+        - Insights
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: ID da conta de anúncio (sem prefixo act_)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Período pré-definido para análise
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_7d
+      responses:
+        "200":
+          description: Success. Retorna métricas do Instagram
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstagramInsights"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/insights/format_performance:
+    get:
+      operationId: getFormatPerformanceInsights
+      summary: Análise por formato
+      description: |
+        Performance detalhada por formato de anúncio.
+        Métricas por formato:
+        Stories:
+          - Impressões: 11.548
+          - Alcance: 9.551
+          - CPM: R$ 18,62
+          - Taxa de Engajamento: 1,62%
+          - Retenção 50%: 59,3%
+        Reels:
+          - Impressões: 3.278
+          - Alcance: 3.278
+          - CPM: R$ 7,42
+          - Taxa de Engajamento: 2,10%
+          - Retenção 50%: 45,4%
+      tags:
+        - Insights
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: ID da conta de anúncio (sem prefixo act_)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Período pré-definido para análise
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_7d
+      responses:
+        "200":
+          description: Success. Retorna análise por formato
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormatPerformanceInsights"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/insights/geographic:
+    get:
+      operationId: getGeographicInsights
+      summary: Performance por região
+      description: |
+        Métricas de performance por região.
+        Métricas: impressions, reach, spend, clicks, ctr, cpc
+        Breakdown: region
+        Período padrão: last_7d
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^act_\d+$'
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Período predefinido para análise
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, last_30d, this_month, last_month]
+            default: "last_7d"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeographicInsights"
+
+  /act_{account_id}/insights/audience:
+    get:
+      operationId: getAudienceInsights
+      summary: Performance por demografia
+      description: |
+        Análise de performance por segmentação demográfica.
+        Breakdowns disponíveis: age, gender (usar um por vez)
+        Métricas: impressions, reach, spend, clicks, ctr, cpc
+      tags:
+        - Insights
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: ID da conta de anúncio (sem prefixo act_)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Período pré-definido para análise
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_7d
+        - name: breakdown
+          in: query
+          description: Tipo de segmentação demográfica
+          required: true
+          schema:
+            type: string
+            enum: [age, gender]
+      responses:
+        "200":
+          description: Success. Retorna análise demográfica
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudienceInsights"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/adsets:
+    get:
+      operationId: getAdSets
+      summary: Lista conjuntos de anúncios
+      description: |
+        Retorna conjuntos de anúncios com targeting.
+        Fields: id, name, campaign_id, status, targeting
+        Targeting inclui: age_min, age_max, genders, geo_locations, interests
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^act_\d+$'
+            example: "906594379912215"
+        - name: fields
+          in: query
+          description: Campos a serem retornados
+          schema:
+            type: string
+            default: "id,name,campaign_id,status,targeting,daily_budget,lifetime_budget"
+        - name: limit
+          in: query
+          description: Número máximo de conjuntos por página
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdSetList"
 
   /act_{account_id}/insights:
     get:
@@ -92,13 +545,701 @@ paths:
         '429':
           $ref: "#/components/responses/RateLimitExceeded"
 
+  /{campaign_id}:
+    get:
+      operationId: getCampaignDetails
+      summary: Get campaign details
+      description: |
+        Get detailed information about a specific campaign.
+        Required permissions: ads_management
+      tags:
+        - Campaigns
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "23851883944980582"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: id,name,objective,status,insights,budget_remaining,lifetime_budget
+      responses:
+        "200":
+          description: Success. Returns campaign details
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/ads:
+    get:
+      operationId: getAds
+      summary: List ads
+      description: |
+        Get a list of all ads in the account.
+        Required permissions: ads_management
+      tags:
+        - Ads
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: id,name,status,creative,targeting,insights
+        - name: limit
+          in: query
+          description: Number of records to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Success. Returns list of ads
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/insights:
+    get:
+      operationId: getInsights
+      summary: Get general insights
+      description: |
+        Get general performance metrics for the account.
+        Required permissions: ads_management
+      tags:
+        - Insights
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Predefined date range
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_7d
+      responses:
+        "200":
+          description: Success. Returns general insights
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/budget:
+    get:
+      operationId: getBudgetAnalysis
+      summary: Get budget analysis
+      description: |
+        Get budget analysis and ROI metrics.
+        Required permissions: ads_management
+      tags:
+        - Analysis
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Predefined date range
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_30d
+      responses:
+        "200":
+          description: Success. Returns budget analysis
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetAnalysis"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/trends:
+    get:
+      operationId: getTrends
+      summary: Get performance trends
+      description: |
+        Get performance trends and recommendations.
+        Required permissions: ads_management
+      tags:
+        - Analysis
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: date_preset
+          in: query
+          description: Predefined date range
+          schema:
+            type: string
+            enum: [last_7d, last_30d, this_month, last_month]
+            default: last_30d
+      responses:
+        "200":
+          description: Success. Returns performance trends
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trends"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/customaudiences:
+    get:
+      operationId: getCustomAudiences
+      summary: Get custom audiences
+      description: |
+        Get custom audiences and lookalike insights.
+        Required permissions: ads_management
+      tags:
+        - Audiences
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: fields
+          in: query
+          required: true
+          description: Fields to return
+          schema:
+            type: string
+            default: id,name,subtype,approximate_count,data_source,delivery_status,lookalike_specs
+      responses:
+        "200":
+          description: Success. Returns custom audiences
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomAudienceList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /act_{account_id}/campaigns/{campaign_id}/performance_insights:
+    get:
+      operationId: getCampaignPerformanceInsights
+      summary: Get campaign performance insights
+      description: |
+        Get detailed performance insights for a specific campaign.
+        Required permissions: ads_management
+      tags:
+        - Campaigns
+        - Insights
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Ad account ID (numeric part only)
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "906594379912215"
+        - name: campaign_id
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            pattern: ^\d+$
+            example: "23851883944980582"
+        - name: date_preset
+          in: query
+          description: Predefined date range
+          schema:
+            type: string
+            enum: [today, yesterday, last_3d, last_7d, this_week, last_week, last_30d, this_month, last_month]
+            default: last_7d
+      responses:
+        "200":
+          description: Success. Returns campaign performance insights
+          headers:
+            X-Business-Use-Case-Usage:
+              $ref: "#/components/headers/BusinessUseCaseUsage"
+            X-Rate-Limit-Reset:
+              $ref: "#/components/headers/RateLimitReset"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignPerformanceInsights"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token de acesso do Meta com os seguintes escopos:
+        - ads_management
+        - ads_read
+        - pages_read_engagement
+
+  headers:
+    BusinessUseCaseUsage:
+      description: Informações de uso da API para o caso de negócio
+      schema:
+        type: string
+    RateLimitReset:
+      description: Tempo em segundos até o reset do rate limit
+      schema:
+        type: integer
+    CacheControl:
+      description: Diretivas de cache
+      schema:
+        type: string
+        default: private, max-age=86400
 
   schemas:
+    CampaignList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID da campanha
+                example: "23851883944980582"
+              name:
+                type: string
+                description: Nome da campanha
+                example: "Campanha Stories - Junho 2023"
+              status:
+                type: string
+                description: Status da campanha
+                enum: [ACTIVE, PAUSED, DELETED, ARCHIVED]
+                example: "ACTIVE"
+              objective:
+                type: string
+                description: Objetivo da campanha
+                enum: [AWARENESS, TRAFFIC, ENGAGEMENT, LEADS, APP_PROMOTION, SALES]
+                example: "ENGAGEMENT"
+              daily_budget:
+                type: number
+                description: Orçamento diário em centavos
+                example: 5000
+              lifetime_budget:
+                type: number
+                description: Orçamento total em centavos
+                example: 100000
+
+    CreativeInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              creative_id:
+                type: string
+                description: ID do criativo
+                example: "23851883944980582"
+              impressions:
+                type: integer
+                description: Número de impressões
+                example: 11548
+              clicks:
+                type: integer
+                description: Número de cliques
+                example: 187
+              ctr:
+                type: number
+                description: Taxa de cliques (%)
+                example: 1.62
+              cpc:
+                type: number
+                description: Custo por clique
+                example: 0.82
+              spend:
+                type: number
+                description: Gasto total
+                example: 153.34
+
+    InstagramInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                description: Data da métrica
+                example: "2023-06-15"
+              impressions:
+                type: integer
+                description: Número de impressões
+                example: 69488
+              reach:
+                type: integer
+                description: Alcance único
+                example: 33992
+              engagement:
+                type: integer
+                description: Total de engajamento
+                example: 1125
+              engagement_rate:
+                type: number
+                description: Taxa de engajamento (%)
+                example: 1.62
+              video_views:
+                type: integer
+                description: Visualizações de vídeo
+                example: 28756
+              video_retention_50:
+                type: number
+                description: Taxa de retenção 50% (%)
+                example: 59.3
+
+    FormatPerformanceInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              format:
+                type: string
+                description: Formato do anúncio
+                enum: [stories, reels]
+                example: "stories"
+              impressions:
+                type: integer
+                description: Número de impressões
+                example: 11548
+              reach:
+                type: integer
+                description: Alcance único
+                example: 9551
+              cpm:
+                type: number
+                description: Custo por mil impressões
+                example: 18.62
+              engagement_rate:
+                type: number
+                description: Taxa de engajamento (%)
+                example: 1.62
+              video_retention_50:
+                type: number
+                description: Taxa de retenção 50% (%)
+                example: 59.3
+              budget_allocation:
+                type: number
+                description: Alocação recomendada de orçamento (%)
+                example: 24.8
+
+    AudienceInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              breakdown_value:
+                type: string
+                description: Valor do breakdown (faixa etária ou gênero)
+                example: "18-24"
+              impressions:
+                type: integer
+                description: Número de impressões
+                example: 15678
+              reach:
+                type: integer
+                description: Alcance único
+                example: 12453
+              spend:
+                type: number
+                description: Gasto total
+                example: 245.67
+              clicks:
+                type: integer
+                description: Número de cliques
+                example: 387
+              ctr:
+                type: number
+                description: Taxa de cliques (%)
+                example: 2.47
+              cpc:
+                type: number
+                description: Custo por clique
+                example: 0.63
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID da campanha
+          example: "23851883944980582"
+        name:
+          type: string
+          description: Nome da campanha
+          example: "Campanha Stories - Junho 2023"
+        objective:
+          type: string
+          description: Objetivo da campanha
+          enum: [AWARENESS, TRAFFIC, ENGAGEMENT, LEADS, APP_PROMOTION, SALES]
+          example: "ENGAGEMENT"
+        status:
+          type: string
+          description: Status da campanha
+          enum: [ACTIVE, PAUSED, DELETED, ARCHIVED]
+          example: "ACTIVE"
+        insights:
+          type: object
+          properties:
+            spend:
+              type: number
+              description: Gasto total
+              example: 1000.00
+            impressions:
+              type: integer
+              description: Número de impressões
+              example: 10000
+            reach:
+              type: integer
+              description: Alcance único
+              example: 5000
+            clicks:
+              type: integer
+              description: Número de cliques
+              example: 100
+            ctr:
+              type: number
+              description: Taxa de cliques (%)
+              example: 1.00
+            cpc:
+              type: number
+              description: Custo por clique
+              example: 10.00
+        budget_remaining:
+          type: number
+          description: Orçamento restante
+          example: 500.00
+        lifetime_budget:
+          type: number
+          description: Orçamento total
+          example: 1000.00
+
+    AdList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID do anúncio
+                example: "23851883944980582"
+              name:
+                type: string
+                description: Nome do anúncio
+                example: "Anúncio Stories - Junho 2023"
+              status:
+                type: string
+                description: Status do anúncio
+                enum: [ACTIVE, PAUSED, DELETED, ARCHIVED]
+                example: "ACTIVE"
+              creative:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ID do criativo
+                    example: "23851883944980582"
+                  name:
+                    type: string
+                    description: Nome do criativo
+                    example: "Criativo Stories - Junho 2023"
+              targeting:
+                type: object
+                properties:
+                  age_min:
+                    type: integer
+                    description: Idade mínima
+                    example: 18
+                  age_max:
+                    type: integer
+                    description: Idade máxima
+                    example: 65
+                  genders:
+                    type: array
+                    items:
+                      type: string
+                      enum: [male, female]
+                    example: ["male", "female"]
+                  geo_locations:
+                    type: object
+                    properties:
+                      countries:
+                        type: array
+                        items:
+                          type: string
+                          example: ["BR"]
+                  interests:
+                    type: array
+                    items:
+                      type: string
+                      example: ["interest1", "interest2"]
+              insights:
+                type: object
+                properties:
+                  spend:
+                    type: number
+                    description: Gasto total
+                    example: 1000.00
+                  impressions:
+                    type: integer
+                    description: Número de impressões
+                    example: 10000
+                  reach:
+                    type: integer
+                    description: Alcance único
+                    example: 5000
+                  clicks:
+                    type: integer
+                    description: Número de cliques
+                    example: 100
+                  ctr:
+                    type: number
+                    description: Taxa de cliques (%)
+                    example: 1.00
+                  cpc:
+                    type: number
+                    description: Custo por clique
+                    example: 10.00
+
     InsightsResponse:
       type: object
       properties:
@@ -107,83 +1248,232 @@ components:
           items:
             type: object
             properties:
-              date_start:
+              date:
                 type: string
                 format: date
-              date_end:
-                type: string
-                format: date
-              publisher_platform:
-                type: string
-                example: "instagram"
-              platform_position:
-                type: string
-                enum: [story, reel, feed]
-              impressions:
-                type: integer
-                example: 13587
-              reach:
-                type: integer
-                example: 11145
+                description: Data da métrica
+                example: "2023-06-15"
               spend:
                 type: number
-                example: 243.78
+                description: Gasto total
+                example: 1000.00
+              impressions:
+                type: integer
+                description: Número de impressões
+                example: 10000
+              reach:
+                type: integer
+                description: Alcance único
+                example: 5000
+              clicks:
+                type: integer
+                description: Número de cliques
+                example: 100
               ctr:
                 type: number
-                example: 18.43
+                description: Taxa de cliques (%)
+                example: 1.00
               cpc:
                 type: number
-                example: 0.10
-              video_p25_watched_actions:
-                type: integer
-                example: 800
-              video_p50_watched_actions:
-                type: integer
-                example: 600
-              video_p75_watched_actions:
-                type: integer
-                example: 400
-              video_p95_watched_actions:
-                type: integer
-                example: 200
-              video_avg_time_watched_actions:
+                description: Custo por clique
+                example: 10.00
+
+    BudgetAnalysis:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                description: Data da métrica
+                example: "2023-06-15"
+              spend:
                 type: number
-                example: 3.0
+                description: Gasto total
+                example: 1000.00
+              roi:
+                type: number
+                description: Retorno sobre o investimento (%)
+                example: 10.00
+
+    Trends:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                description: Data da métrica
+                example: "2023-06-15"
+              spend:
+                type: number
+                description: Gasto total
+                example: 1000.00
+              impressions:
+                type: integer
+                description: Número de impressões
+                example: 10000
+              reach:
+                type: integer
+                description: Alcance único
+                example: 5000
+              clicks:
+                type: integer
+                description: Número de cliques
+                example: 100
+              ctr:
+                type: number
+                description: Taxa de cliques (%)
+                example: 1.00
+              cpc:
+                type: number
+                description: Custo por clique
+                example: 10.00
+
+    CustomAudienceList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID da audiência personalizada
+                example: "23851883944980582"
+              name:
+                type: string
+                description: Nome da audiência personalizada
+                example: "Audiência Personalizada - Junho 2023"
+              subtype:
+                type: string
+                description: Subtipo da audiência personalizada
+                enum: [CUSTOM, LOOKALIKE]
+                example: "CUSTOM"
+              approximate_count:
+                type: integer
+                description: Contagem aproximada de usuários na audiência
+                example: 10000
+              data_source:
+                type: string
+                description: Fonte de dados da audiência
+                example: "pixel"
+              delivery_status:
+                type: string
+                description: Status de entrega da audiência
+                enum: [ACTIVE, PAUSED, DELETED, ARCHIVED]
+                example: "ACTIVE"
+              lookalike_specs:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: Tipo de audiência lookalike
+                    enum: [SIMILAR, INTEREST]
+                    example: "SIMILAR"
+                  seed_audience_id:
+                    type: string
+                    description: ID da audiência semente
+                    example: "23851883944980582"
+                  ratio:
+                    type: number
+                    description: Razão de similaridade
+                    example: 1.00
+
+    CampaignPerformanceInsights:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                description: Data da métrica
+                example: "2023-06-15"
+              spend:
+                type: number
+                description: Gasto total
+                example: 1000.00
+              impressions:
+                type: integer
+                description: Número de impressões
+                example: 10000
+              reach:
+                type: integer
+                description: Alcance único
+                example: 5000
+              clicks:
+                type: integer
+                description: Número de cliques
+                example: 100
+              ctr:
+                type: number
+                description: Taxa de cliques (%)
+                example: 1.00
+              cpc:
+                type: number
+                description: Custo por clique
+                example: 10.00
 
   responses:
     BadRequest:
-      description: Invalid request parameters
+      description: Parâmetros inválidos na requisição
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
     Unauthorized:
-      description: Invalid or expired access token
+      description: Token de acesso inválido ou expirado
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
     RateLimitExceeded:
-      description: Rate limit exceeded
+      description: Limite de requisições excedido
       headers:
         Retry-After:
           schema:
             type: integer
+            description: Segundos até próxima tentativa
+            example: 60
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
 
-  headers:
-    BusinessUseCaseUsage:
-      description: Usage stats for business use case
-      schema:
-        type: string
-    RateLimitReset:
-      description: Time until rate limit reset in seconds
-      schema:
-        type: integer
-    CacheControl:
-      description: Cache control directives
-      schema:
-        type: string
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Invalid request parameters"
+            type:
+              type: string
+              example: "OAuthException"
+            code:
+              type: integer
+              example: 100
+            error_subcode:
+              type: integer
+              example: 188
+            error_user_title:
+              type: string
+              example: "Invalid request parameters"
+            error_user_msg:
+              type: string
+              example: "Invalid request parameters"
